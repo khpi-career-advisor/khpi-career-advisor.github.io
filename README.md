@@ -1,6 +1,6 @@
 # Polytech Quiz - "Який ти Політехнік?"
 
-An interactive quiz application to help prospective students find their ideal education direction at Kharkiv Polytechnic Institute (KPI).
+An interactive quiz application to help prospective students find their ideal education direction at Kharkiv Polytechnic Institute (KhPI).
 
 ## Project Structure
 
@@ -69,7 +69,7 @@ The JavaScript files must be loaded in this specific order:
 1. **Intro Screen**: User selects gender and age range
 2. **Quiz Cards**: User swipes left (NO) or right (YES) on 20 questions
 3. **Calculation**: Weighted algorithm calculates match percentages for 4 education directions
-4. **Results**: Display sorted results with links to KPI admission pages
+4. **Results**: Display sorted results with links to KhPI admission pages
 
 ## Education Directions
 
