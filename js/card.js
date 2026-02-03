@@ -22,7 +22,12 @@ class CardController {
 
         const glowText = document.createElement('div');
         glowText.className = 'glow-text';
-        glowText.textContent = cards[index].text;
+
+        // start: add swipe tip
+        glowText.innerHTML = cards[index].text;
+        glowText.innerHTML += '</br>(cвайп вправо або вліво)';
+        // end: add swipe tip
+
         card.appendChild(glowText);
 
         const leftHint = document.createElement('div');
