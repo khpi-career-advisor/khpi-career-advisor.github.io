@@ -25,7 +25,7 @@ class CardController {
 
         // start: add swipe tip
         glowText.innerHTML = cards[index].text;
-        glowText.innerHTML += '</br>(cвайп вправо або вліво)';
+        glowText.innerHTML += '</br>(cвайп вліво або вправо)';
         // end: add swipe tip
 
         card.appendChild(glowText);
