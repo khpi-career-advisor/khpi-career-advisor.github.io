@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
     introController = new IntroController();
     cardController = new CardController();
     resultsController = new ResultsController();
-    jsonBucket = new LocalStorageCollection();
+    jsonBucket = new LocalStorageCollection('khpi-career-advisor');
 
     console.log('Application initialized successfully!');
 });
