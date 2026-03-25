@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Space Endgame — SE&MIT Department</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
+
+  :root {
+    --c-bg: #02030a;
+    --c-void: #060818;
+    --c-accent1: #00f0ff;
+    --c-accent2: #ff2d6b;
+    --c-accent3: #f5c518;
+    --c-text: #c8d8ff;
+    --c-muted: #3a4870;
+    --glow1: 0 0 20px #00f0ff88, 0 0 60px #00f0ff33;
+    --glow2: 0 0 20px #ff2d6b88, 0 0 60px #ff2d6b33;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 100%; height: 100%;
+    background: var(--c-bg);
+    color: var(--c-text);
+    font-family: 'Share Tech Mono', monospace;
+    overflow-x: hidden;
+  }
+
+  /* ── STARFIELD ───────────────────────────────────────── */
+  #starfield {
+    position: fixed; inset: 0; z-index: 0;
+    pointer-events: none;
+  }
+
+  /* ── NEBULA LAYERS ───────────────────────────────────── */
+  .nebula {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background:
+      radial-gradient(ellipse 60% 40% at 20% 30%, #0d1b5533 0%, transparent 60%),
+      radial-gradient(ellipse 50% 35% at 80% 65%, #3d002255 0%, transparent 55%),
+      radial-gradient(ellipse 40% 50% at 55% 10%, #00112a44 0%, transparent 50%);
+    animation: nebulaDrift 40s ease-in-out infinite alternate;
+  }
+  @keyframes nebulaDrift {
+    0%   { transform: scale(1) translateY(0); }
+    100% { transform: scale(1.08) translateY(-3%); }
+  }
+
+  /* ── SCANLINE OVERLAY ────────────────────────────────── */
+  .scanlines {
+    position: fixed; inset: 0; z-index: 1; pointer-events: none;
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent 0px, transparent 3px,
+      rgba(0,0,0,0.12) 3px, rgba(0,0,0,0.12) 4px
+    );
+  }
+
+  /* ── LAYOUT ──────────────────────────────────────────── */
+  .wrapper {
+    position: relative; z-index: 2;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 60px 32px 80px;
+  }
+
+  /* ── HEADER ──────────────────────────────────────────── */
+  header {
+    text-align: center;
+    margin-bottom: 70px;
+  }
+
+  .badge {
+    display: inline-block;
+    font-size: 11px;
+    letter-spacing: 0.25em;
+    color: var(--c-accent1);
+    border: 1px solid var(--c-accent1);
+    padding: 4px 14px;
+    margin-bottom: 22px;
+    animation: badgePulse 3s ease-in-out infinite;
+  }
+  @keyframes badgePulse {
+    0%, 100% { box-shadow: none; }
+    50% { box-shadow: var(--glow1); }
+  }
+
+  h1 {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 900;
+    font-size: clamp(2.4rem, 6vw, 5rem);
+    line-height: 1.05;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    background: linear-gradient(135deg, #fff 0%, var(--c-accent1) 45%, var(--c-accent2) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: drop-shadow(0 0 30px #00f0ff55);
+  }
+
+  .subtitle {
+    margin-top: 16px;
+    font-size: 13px;
+    letter-spacing: 0.18em;
+    color: var(--c-muted);
+    text-transform: uppercase;
+  }
+
+  /* ── GAME GRID ───────────────────────────────────────── */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 24px;
+  }
+
+  /* ── CARD ────────────────────────────────────────────── */
+  .card {
+    position: relative;
+    border: 1px solid var(--c-muted);
+    background: rgba(6,8,24,0.85);
+    overflow: hidden;
+    cursor: pointer;
+    text-decoration: none;
+    display: block;
+    transition: border-color 0.3s, transform 0.3s;
+    backdrop-filter: blur(6px);
+  }
+  .card:hover {
+    border-color: var(--card-accent, var(--c-accent1));
+    transform: translateY(-4px);
+  }
+  .card::before {
+    content: '';
+    position: absolute; inset: 0; z-index: 0;
+    background: linear-gradient(135deg, var(--card-accent, var(--c-accent1))08 0%, transparent 60%);
+    opacity: 0;
+    transition: opacity 0.4s;
+  }
+  .card:hover::before { opacity: 1; }
+  .card:hover .card-glow { opacity: 1; }
+
+  .card-glow {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: var(--card-accent, var(--c-accent1));
+    box-shadow: 0 0 18px 2px var(--card-accent, var(--c-accent1));
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: 3;
+  }
+
+  /* ── CANVAS PREVIEW ──────────────────────────────────── */
+  .card canvas {
+    display: block;
+    width: 100%;
+    height: 180px;
+    position: relative; z-index: 1;
+  }
+
+  /* ── CARD BODY ───────────────────────────────────────── */
+  .card-body {
+    padding: 18px 22px 22px;
+    position: relative; z-index: 2;
+  }
+  .card-number {
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--card-accent, var(--c-accent1));
+    margin-bottom: 6px;
+    opacity: 0.7;
+  }
+  .card-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: #fff;
+    margin-bottom: 8px;
+  }
+  .card-desc {
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--c-muted);
+  }
+  .card-cta {
+    margin-top: 16px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: var(--card-accent, var(--c-accent1));
+    text-transform: uppercase;
+  }
+  .card-cta::after {
+    content: '→';
+    transition: transform 0.2s;
+  }
+  .card:hover .card-cta::after { transform: translateX(5px); }
+
+  /* ── FOOTER ──────────────────────────────────────────── */
+  footer {
+    margin-top: 80px;
+    text-align: center;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: var(--c-muted);
+    text-transform: uppercase;
+  }
+  footer span { color: var(--c-accent1); }
+
+  /* ── CURSOR ──────────────────────────────────────────── */
+  .cursor {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--c-accent1);
+    position: fixed;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+    box-shadow: var(--glow1);
+    transition: width 0.2s, height 0.2s, background 0.2s;
+  }
+  .cursor-ring {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    border: 1px solid var(--c-accent1);
+    position: fixed;
+    pointer-events: none;
+    z-index: 9998;
+    transform: translate(-50%, -50%);
+    opacity: 0.4;
+    transition: all 0.12s ease-out;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="starfield"></canvas>
+<div class="nebula"></div>
+<div class="scanlines"></div>
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<div class="wrapper">
+  <header>
+    <div class="badge">SE&MIT Department — Game Hub</div>
+    <h1>Space Endgame</h1>
+    <p class="subtitle">6 missions · choose your battlefield</p>
+  </header>
+
+  <div class="grid" id="gameGrid"></div>
+
+  <footer>
+    <p>Powered by <span>SE&MIT Department</span> · NTU "KhPI"</p>
+  </footer>
+</div>
+
+<script>
+/* ── GAMES DATA ──────────────────────────────────────────────────── */
+const games = [
+  {
+    title: 'Dark Crusade',
+    url: '/dark-crusade.html',
+    desc: 'Dungeon crawler in deep space. Clear corrupted sectors before the void closes in.',
+    accent: '#a855f7',
+    draw: drawDarkCrusade
+  },
+  {
+    title: 'Neon Asteroids',
+    url: '/neon-asteroids.html',
+    desc: 'Classic asteroid field, rebuilt with vector thrust and split-fire weapons.',
+    accent: '#00f0ff',
+    draw: drawNeonAsteroids
+  },
+  {
+    title: 'Neon Galaxian',
+    url: '/neon-galaxian.html',
+    desc: 'Formation attacks from the edge of the galaxy. Intercept before they reach home.',
+    accent: '#f5c518',
+    draw: drawNeonGalaxian
+  },
+  {
+    title: 'Neon Invaders',
+    url: '/neon-invaders.html',
+    desc: 'Waves of synthetic warriors descend in perfect sync. Break the pattern.',
+    accent: '#00ff88',
+    draw: drawNeonInvaders
+  },
+  {
+    title: 'Neon Sinistar',
+    url: '/neon-sinistar.html',
+    desc: 'Harvest crystals while a planetary skull assembles itself from the debris.',
+    accent: '#ff2d6b',
+    draw: drawNeonSinistar
+  },
+  {
+    title: 'Neon Strike',
+    url: '/neon-strike.html',
+    desc: 'High-speed rail-gun runs through enemy convoys. One shot. No second chances.',
+    accent: '#ff8c00',
+    draw: drawNeonStrike
+  }
+];
+
+/* ── BUILD CARDS ─────────────────────────────────────────────────── */
+const grid = document.getElementById('gameGrid');
+const animLoops = [];
+
+games.forEach((g, i) => {
+  const a = document.createElement('a');
+  a.className = 'card';
+  a.href = g.url;
+  a.target = '_blank';
+  a.style.setProperty('--card-accent', g.accent);
+  a.innerHTML = `
+    <div class="card-glow"></div>
+    <canvas id="cv${i}" height="180"></canvas>
+    <div class="card-body">
+      <div class="card-number">MISSION_${String(i+1).padStart(2,'0')}</div>
+      <div class="card-title">${g.title}</div>
+      <div class="card-desc">${g.desc}</div>
+      <div class="card-cta">Launch mission</div>
+    </div>
+  `;
+  grid.appendChild(a);
+});
+
+/* wait for layout */
+requestAnimationFrame(() => {
+  games.forEach((g, i) => {
+    const cv = document.getElementById('cv' + i);
+    cv.width = cv.offsetWidth;
+    g.draw(cv, g.accent);
+  });
+});
+
+/* ── STARFIELD ───────────────────────────────────────────────────── */
+(function initStars() {
+  const cv = document.getElementById('starfield');
+  const ctx = cv.getContext('2d');
+  let W, H, stars = [];
+
+  function resize() {
+    W = cv.width = window.innerWidth;
+    H = cv.height = window.innerHeight;
+    stars = Array.from({length: 300}, () => ({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      r: Math.random() * 1.4 + 0.2,
+      speed: Math.random() * 0.3 + 0.05,
+      bright: Math.random()
+    }));
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  let t = 0;
+  function tick() {
+    t++;
+    ctx.clearRect(0, 0, W, H);
+    stars.forEach(s => {
+      s.y += s.speed;
+      if (s.y > H) { s.y = 0; s.x = Math.random() * W; }
+      const alpha = 0.4 + 0.5 * Math.abs(Math.sin(t * 0.01 + s.bright * 10));
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(180,200,255,${alpha})`;
+      ctx.fill();
+    });
+    requestAnimationFrame(tick);
+  }
+  tick();
+})();
+
+/* ── CURSOR ──────────────────────────────────────────────────────── */
+const cursor = document.getElementById('cursor');
+const ring = document.getElementById('cursorRing');
+let mx = 0, my = 0, rx = 0, ry = 0;
+document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+function moveCursor() {
+  cursor.style.left = mx + 'px'; cursor.style.top = my + 'px';
+  rx += (mx - rx) * 0.12; ry += (my - ry) * 0.12;
+  ring.style.left = rx + 'px'; ring.style.top = ry + 'px';
+  requestAnimationFrame(moveCursor);
+}
+moveCursor();
+document.querySelectorAll('.card').forEach(c => {
+  c.addEventListener('mouseenter', () => {
+    cursor.style.width = '14px'; cursor.style.height = '14px';
+    cursor.style.background = c.style.getPropertyValue('--card-accent');
+  });
+  c.addEventListener('mouseleave', () => {
+    cursor.style.width = '8px'; cursor.style.height = '8px';
+    cursor.style.background = 'var(--c-accent1)';
+  });
+});
+
+/* ══════════════════════════════════════════════════════════════════
+   CANVAS PREVIEW PAINTERS
+══════════════════════════════════════════════════════════════════ */
+
+/* ── 1. Dark Crusade — gothic corridors ────────────────────────── */
+function drawDarkCrusade(cv, accent) {
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  let t = 0;
+
+  const purp = accent;
+
+  function frame() {
+    ctx.fillStyle = '#05010f';
+    ctx.fillRect(0, 0, W, H);
+
+    // dungeon grid
+    ctx.strokeStyle = purp + '30';
+    ctx.lineWidth = 1;
+    for (let x = 0; x < W; x += 40) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+    }
+    for (let y = 0; y < H; y += 40) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+    }
+
+    // floating rune symbols
+    const runes = ['✦','⬡','◈','⬢','⟁'];
+    for (let i = 0; i < 8; i++) {
+      const x = 30 + (i * 47 + Math.sin(t * 0.02 + i) * 12) % (W - 60);
+      const y = 20 + ((i * 29 + t * 0.4 + i * 20) % (H - 20));
+      const alpha = 0.3 + 0.3 * Math.sin(t * 0.05 + i);
+      ctx.font = '18px serif';
+      ctx.fillStyle = `rgba(168,85,247,${alpha})`;
+      ctx.fillText(runes[i % runes.length], x, y);
+    }
+
+    // portal ring
+    const cx = W / 2, cy = H / 2;
+    for (let r = 0; r < 4; r++) {
+      ctx.beginPath();
+      ctx.arc(cx, cy, 30 + r * 12 + Math.sin(t * 0.03 + r) * 4, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(168,85,247,${0.6 - r * 0.1})`;
+      ctx.lineWidth = 2 - r * 0.3;
+      ctx.stroke();
+    }
+    // portal fill
+    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 30);
+    grad.addColorStop(0, 'rgba(168,85,247,0.5)');
+    grad.addColorStop(1, 'transparent');
+    ctx.beginPath(); ctx.arc(cx, cy, 30, 0, Math.PI * 2);
+    ctx.fillStyle = grad; ctx.fill();
+
+    t++;
+    requestAnimationFrame(frame);
+  }
+  frame();
+}
+
+/* ── 2. Neon Asteroids ─────────────────────────────────────────── */
+function drawNeonAsteroids(cv, accent) {
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  let t = 0;
+
+  const rocks = Array.from({length: 6}, (_, i) => ({
+    x: Math.random() * W, y: Math.random() * H,
+    vx: (Math.random() - 0.5) * 1.2, vy: (Math.random() - 0.5) * 1.2,
+    r: 14 + Math.random() * 20,
+    ang: Math.random() * Math.PI * 2,
+    spin: (Math.random() - 0.5) * 0.03,
+    pts: Array.from({length: 8}, () => 0.7 + Math.random() * 0.5)
+  }));
+
+  const ship = { x: W/2, y: H * 0.75, ang: -Math.PI/2 };
+
+  function polyRock(ctx, rock) {
+    const n = rock.pts.length;
+    ctx.beginPath();
+    for (let i = 0; i < n; i++) {
+      const a = rock.ang + (i / n) * Math.PI * 2;
+      const r = rock.r * rock.pts[i];
+      const px = rock.x + Math.cos(a) * r;
+      const py = rock.y + Math.sin(a) * r;
+      i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+  }
+
+  function frame() {
+    ctx.fillStyle = 'rgba(2,3,15,0.85)';
+    ctx.fillRect(0, 0, W, H);
+
+    rocks.forEach(r => {
+      r.x = (r.x + r.vx + W) % W;
+      r.y = (r.y + r.vy + H) % H;
+      r.ang += r.spin;
+
+      polyRock(ctx, r);
+      ctx.strokeStyle = accent;
+      ctx.lineWidth = 1.5;
+      ctx.shadowColor = accent; ctx.shadowBlur = 8;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    });
+
+    // ship
+    ctx.save();
+    ctx.translate(ship.x, ship.y);
+    ctx.rotate(ship.ang + t * 0.005);
+    ctx.beginPath();
+    ctx.moveTo(0, -14); ctx.lineTo(9, 10); ctx.lineTo(0, 6); ctx.lineTo(-9, 10);
+    ctx.closePath();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1.5;
+    ctx.shadowColor = accent; ctx.shadowBlur = 12;
+    ctx.stroke();
+    // thruster
+    if (t % 8 < 5) {
+      ctx.beginPath();
+      ctx.moveTo(-4, 8); ctx.lineTo(0, 18 + Math.random() * 6); ctx.lineTo(4, 8);
+      ctx.strokeStyle = accent; ctx.lineWidth = 1; ctx.stroke();
+    }
+    ctx.restore();
+    ctx.shadowBlur = 0;
+
+    t++;
+    requestAnimationFrame(frame);
+  }
+  frame();
+}
+
+/* ── 3. Neon Galaxian ──────────────────────────────────────────── */
+function drawNeonGalaxian(cv, accent) {
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  let t = 0;
+
+  const cols = 8, rows = 3;
+  const enemies = [];
+  for (let r = 0; r < rows; r++)
+    for (let c = 0; c < cols; c++)
+      enemies.push({ c, r, alive: true, dive: false, dx: 0, dy: 0 });
+
+  let diver = null, diverT = 0;
+  const bullets = [];
+
+  function frame() {
+    ctx.fillStyle = 'rgba(2,3,15,0.88)';
+    ctx.fillRect(0, 0, W, H);
+
+    const offsetX = 30 + Math.sin(t * 0.02) * 20;
+    const spacingX = (W - 60) / (cols - 1);
+    const spacingY = 22;
+
+    // occasional diver
+    if (!diver && t % 90 === 0) {
+      const alive = enemies.filter(e => e.alive);
+      if (alive.length) {
+        diver = alive[Math.floor(Math.random() * alive.length)];
+        diver.dive = true; diver.dx = 0; diver.dy = 0; diverT = 0;
+      }
+    }
+
+    enemies.forEach(e => {
+      if (!e.alive) return;
+      let ex = offsetX + e.c * spacingX;
+      let ey = 20 + e.r * spacingY;
+
+      if (e.dive) {
+        diverT++;
+        ex += Math.sin(diverT * 0.12) * 40;
+        ey += diverT * 1.5;
+        if (ey > H + 20) { e.dive = false; diver = null; diverT = 0; }
+      }
+
+      // enemy sprite (simple arrow)
+      const colors = [accent, '#ff6b35', '#ff2d6b'];
+      ctx.strokeStyle = colors[e.r % 3];
+      ctx.lineWidth = 1.5;
+      ctx.shadowColor = colors[e.r % 3]; ctx.shadowBlur = 6;
+      ctx.beginPath();
+      ctx.moveTo(ex - 7, ey + 5); ctx.lineTo(ex, ey - 6); ctx.lineTo(ex + 7, ey + 5);
+      ctx.lineTo(ex + 3, ey + 2); ctx.lineTo(ex - 3, ey + 2); ctx.closePath();
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    });
+
+    // player at bottom
+    const px = W / 2 + Math.sin(t * 0.03) * (W * 0.3);
+    const py = H - 20;
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.shadowColor = accent; ctx.shadowBlur = 14;
+    ctx.beginPath();
+    ctx.moveTo(px - 12, py + 8); ctx.lineTo(px, py - 10); ctx.lineTo(px + 12, py + 8);
+    ctx.lineTo(px + 5, py + 3); ctx.lineTo(px - 5, py + 3); ctx.closePath();
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // auto bullet
+    if (t % 30 === 0) bullets.push({ x: px, y: py - 14 });
+    bullets.forEach(b => { b.y -= 5; });
+    bullets.splice(0, bullets.filter(b => b.y < -10).length);
+    bullets.forEach(b => {
+      ctx.beginPath();
+      ctx.moveTo(b.x, b.y); ctx.lineTo(b.x, b.y + 10);
+      ctx.strokeStyle = accent; ctx.lineWidth = 2;
+      ctx.shadowColor = accent; ctx.shadowBlur = 8;
+      ctx.stroke(); ctx.shadowBlur = 0;
+    });
+
+    t++;
+    requestAnimationFrame(frame);
+  }
+  frame();
+}
+
+/* ── 4. Neon Invaders ──────────────────────────────────────────── */
+function drawNeonInvaders(cv, accent) {
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  let t = 0;
+  let dir = 1;
+
+  const cols = 10, rows = 4;
+  const grid = [];
+  for (let r = 0; r < rows; r++)
+    for (let c = 0; c < cols; c++)
+      grid.push({ c, r });
+
+  function drawInvader(x, y, frame, color) {
+    ctx.fillStyle = color;
+    ctx.shadowColor = color; ctx.shadowBlur = 8;
+    const f = frame % 2;
+    if (f === 0) {
+      // frame A
+      const px = [[1,0],[2,0],[1,1],[2,1],[0,2],[1,2],[2,2],[3,2],[0,3],[3,3]];
+      px.forEach(([dx, dy]) => ctx.fillRect(x + (dx-1.5)*4, y + (dy-1.5)*4, 3.5, 3.5));
+    } else {
+      // frame B
+      const px = [[1,0],[2,0],[0,1],[1,1],[2,1],[3,1],[1,2],[2,2],[1,3],[2,3]];
+      px.forEach(([dx, dy]) => ctx.fillRect(x + (dx-1.5)*4, y + (dy-1.5)*4, 3.5, 3.5));
+    }
+    ctx.shadowBlur = 0;
+  }
+
+  const bullets = [];
+  const colors = [accent, '#00ffaa', '#ffee00', '#ffffff'];
+
+  function frame() {
+    ctx.fillStyle = 'rgba(2,3,15,0.88)';
+    ctx.fillRect(0, 0, W, H);
+
+    const offsetX = 30 + Math.sin(t * 0.015) * (W * 0.15);
+    const spacingX = (W - 60) / (cols - 1);
+    const spacingY = 28;
+
+    grid.forEach(e => {
+      const ex = offsetX + e.c * spacingX;
+      const ey = 18 + e.r * spacingY;
+      drawInvader(ex, ey, Math.floor(t / 20), colors[e.r % 4]);
+    });
+
+    // barriers
+    for (let b = 0; b < 4; b++) {
+      const bx = 50 + b * (W - 100) / 3;
+      const by = H - 45;
+      ctx.fillStyle = accent + '55';
+      ctx.fillRect(bx - 20, by, 40, 16);
+    }
+
+    // player
+    const px = W / 2 + Math.sin(t * 0.04) * (W * 0.35);
+    ctx.fillStyle = '#fff';
+    ctx.shadowColor = accent; ctx.shadowBlur = 12;
+    ctx.fillRect(px - 14, H - 20, 28, 6);
+    ctx.fillRect(px - 8, H - 26, 16, 6);
+    ctx.fillRect(px - 3, H - 30, 6, 4);
+    ctx.shadowBlur = 0;
+
+    if (t % 25 === 0) bullets.push({ x: px, y: H - 30 });
+    bullets.forEach(b => { b.y -= 6; });
+    bullets.length = Math.min(bullets.length, 5);
+    bullets.forEach(b => {
+      ctx.fillStyle = accent;
+      ctx.shadowColor = accent; ctx.shadowBlur = 6;
+      ctx.fillRect(b.x - 1, b.y, 3, 10);
+      ctx.shadowBlur = 0;
+    });
+
+    t++;
+    requestAnimationFrame(frame);
+  }
+  frame();
+}
+
+/* ── 5. Neon Sinistar ──────────────────────────────────────────── */
+function drawNeonSinistar(cv, accent) {
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  let t = 0;
+
+  const cx = W / 2, cy = H / 2;
+  const particles = Array.from({length: 25}, (_, i) => ({
+    ang: (i / 25) * Math.PI * 2,
+    dist: 20 + Math.random() * 50,
+    speed: 0.005 + Math.random() * 0.01,
+    size: 2 + Math.random() * 4,
+    attached: false
+  }));
+
+  function frame() {
+    ctx.fillStyle = 'rgba(2,3,15,0.88)';
+    ctx.fillRect(0, 0, W, H);
+
+    // skull outline
+    const progress = (Math.sin(t * 0.008) * 0.5 + 0.5);
+    const skullR = 35 + progress * 10;
+
+    ctx.beginPath();
+    ctx.arc(cx, cy - 5, skullR, 0, Math.PI * 2);
+    ctx.strokeStyle = accent;
+    ctx.lineWidth = 2;
+    ctx.shadowColor = accent; ctx.shadowBlur = 20;
+    ctx.stroke();
+
+    // eyes
+    [cx - 13, cx + 13].forEach(ex => {
+      ctx.beginPath();
+      ctx.arc(ex, cy - 10, 7, 0, Math.PI * 2);
+      ctx.fillStyle = accent + 'cc';
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(ex, cy - 10, 4, 0, Math.PI * 2);
+      ctx.fillStyle = '#02030a';
+      ctx.fill();
+    });
+
+    // teeth
+    for (let i = -2; i <= 2; i++) {
+      ctx.beginPath();
+      ctx.rect(cx + i * 9 - 3, cy + 18, 6, 10);
+      ctx.fillStyle = accent + 'aa';
+      ctx.fill();
+    }
+    ctx.shadowBlur = 0;
+
+    // orbiting crystals
+    particles.forEach(p => {
+      p.ang += p.speed;
+      const px = cx + Math.cos(p.ang) * (p.attached ? skullR + 8 : p.dist + 30);
+      const py = cy + Math.sin(p.ang) * (p.attached ? skullR + 8 : p.dist + 30);
+
+      if (!p.attached && Math.random() < 0.002) p.attached = true;
+
+      ctx.beginPath();
+      ctx.rect(px - p.size/2, py - p.size/2, p.size, p.size);
+      ctx.fillStyle = p.attached ? '#fff' : accent + 'aa';
+      ctx.shadowColor = accent; ctx.shadowBlur = p.attached ? 12 : 4;
+      ctx.fill();
+    });
+    ctx.shadowBlur = 0;
+
+    t++;
+    requestAnimationFrame(frame);
+  }
+  frame();
+}
+
+/* ── 6. Neon Strike ────────────────────────────────────────────── */
+function drawNeonStrike(cv, accent) {
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  let t = 0;
+
+  const ships = Array.from({length: 5}, (_, i) => ({
+    x: W + 60 + i * 90,
+    y: 40 + i * 28,
+    speed: 1.5 + i * 0.4
+  }));
+
+  const beams = [];
+  const explosions = [];
+
+  function frame() {
+    ctx.fillStyle = 'rgba(2,3,15,0.88)';
+    ctx.fillRect(0, 0, W, H);
+
+    // speed lines
+    for (let i = 0; i < 12; i++) {
+      const lx = (W - (t * 4 + i * 60) % W);
+      const ly = 10 + i * 14;
+      const len = 30 + Math.random() * 50;
+      ctx.beginPath();
+      ctx.moveTo(lx, ly); ctx.lineTo(lx + len, ly);
+      ctx.strokeStyle = `rgba(255,140,0,${0.1 + i * 0.02})`;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    // enemy ships moving right to left
+    ships.forEach(s => {
+      s.x -= s.speed;
+      if (s.x < -60) { s.x = W + 60; s.y = 20 + Math.random() * (H - 50); }
+
+      ctx.save();
+      ctx.translate(s.x, s.y);
+      ctx.strokeStyle = '#ff4444';
+      ctx.lineWidth = 1.5;
+      ctx.shadowColor = '#ff4444'; ctx.shadowBlur = 8;
+      ctx.beginPath();
+      // enemy arrow shape pointing left
+      ctx.moveTo(12, 0); ctx.lineTo(-12, -8); ctx.lineTo(-6, 0);
+      ctx.lineTo(-12, 8); ctx.closePath();
+      ctx.stroke();
+      ctx.restore();
+      ctx.shadowBlur = 0;
+    });
+
+    // player on left
+    const py = H / 2 + Math.sin(t * 0.04) * 20;
+    ctx.save();
+    ctx.translate(55, py);
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.shadowColor = accent; ctx.shadowBlur = 16;
+    ctx.beginPath();
+    ctx.moveTo(-12, -8); ctx.lineTo(14, 0); ctx.lineTo(-12, 8);
+    ctx.lineTo(-6, 3); ctx.lineTo(-6, -3); ctx.closePath();
+    ctx.stroke();
+    // exhaust
+    if (t % 6 < 3) {
+      ctx.beginPath();
+      ctx.moveTo(-12, -4); ctx.lineTo(-20 - Math.random() * 10, 0); ctx.lineTo(-12, 4);
+      ctx.strokeStyle = accent; ctx.lineWidth = 1.5; ctx.stroke();
+    }
+    ctx.restore();
+    ctx.shadowBlur = 0;
+
+    // auto-fire beam
+    if (t % 20 === 0) beams.push({ x: 65, y: py, len: 0 });
+    beams.forEach(b => { b.x += 14; b.len = Math.min(b.len + 14, 60); });
+    beams.forEach(b => {
+      ctx.beginPath();
+      ctx.moveTo(b.x - b.len, b.y); ctx.lineTo(b.x, b.y);
+      ctx.strokeStyle = accent;
+      ctx.lineWidth = 3;
+      ctx.shadowColor = accent; ctx.shadowBlur = 12;
+      ctx.stroke(); ctx.shadowBlur = 0;
+    });
+    beams.splice(0, beams.filter(b => b.x > W + 10).length);
+
+    // small explosions
+    if (t % 40 === 0) {
+      explosions.push({
+        x: 200 + Math.random() * (W - 250),
+        y: 20 + Math.random() * (H - 40),
+        r: 0, max: 18
+      });
+    }
+    explosions.forEach(e => { e.r += 1.5; });
+    explosions.forEach(e => {
+      ctx.beginPath();
+      ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(255,140,0,${1 - e.r / e.max})`;
+      ctx.lineWidth = 2;
+      ctx.shadowColor = accent; ctx.shadowBlur = 8;
+      ctx.stroke(); ctx.shadowBlur = 0;
+    });
+    explosions.splice(0, explosions.filter(e => e.r >= e.max).length);
+
+    t++;
+    requestAnimationFrame(frame);
+  }
+  frame();
+}
+</script>
+</body>
+</html>

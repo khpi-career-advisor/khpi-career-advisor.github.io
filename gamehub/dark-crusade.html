@@ -1,0 +1,1539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DARK CRUSADE — Void Knights</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=VT323&family=Cinzel:wght@700;900&display=swap');
+
+  :root {
+    --neon-gold: #ffd700;
+    --neon-red: #ff2244;
+    --neon-cyan: #00ffff;
+    --neon-purple: #cc44ff;
+    --neon-green: #00ff88;
+    --bg-dark: #050508;
+    --bg-mid: #0a0a14;
+    --panel-bg: rgba(10,10,20,0.92);
+    --border-glow: 0 0 8px #ffd700, 0 0 20px rgba(255,215,0,0.3);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 100%; height: 100%;
+    background: var(--bg-dark);
+    overflow: hidden;
+    font-family: 'VT323', monospace;
+    color: var(--neon-gold);
+    user-select: none;
+  }
+
+  #gameContainer {
+    position: relative;
+    width: 100vw; height: 100vh;
+    overflow: hidden;
+  }
+
+  canvas {
+    display: block;
+    width: 100%; height: 100%;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+
+  /* ── UI OVERLAY ── */
+  #hud {
+    position: absolute; top: 0; left: 0; right: 0;
+    padding: 12px 20px;
+    display: flex; justify-content: space-between; align-items: flex-start;
+    pointer-events: none;
+    z-index: 10;
+  }
+  .hud-block { display: flex; flex-direction: column; gap: 4px; }
+  .hud-label { font-size: 16px; color: #aaa; letter-spacing: 2px; }
+  .hud-value { font-size: 32px; color: var(--neon-gold); text-shadow: 0 0 10px var(--neon-gold); }
+  #livesDisplay span { font-size: 22px; margin-right: 4px; }
+
+  /* ── HEALTH BAR (player) ── */
+  #playerHealthBar {
+    width: 200px; height: 14px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid var(--neon-red);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  #playerHealthFill {
+    height: 100%;
+    background: linear-gradient(90deg, #ff0000, #ff6644);
+    box-shadow: 0 0 8px #ff2244;
+    transition: width 0.15s;
+  }
+
+  /* ── SCREENS ── */
+  .screen {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    z-index: 20;
+    background: radial-gradient(ellipse at center, rgba(20,5,40,0.95) 0%, rgba(5,5,8,0.98) 100%);
+  }
+  .screen.hidden { display: none; }
+
+  .screen-title {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(36px, 6vw, 80px);
+    font-weight: 900;
+    color: var(--neon-gold);
+    text-shadow: 0 0 20px var(--neon-gold), 0 0 50px rgba(255,215,0,0.4);
+    letter-spacing: 6px;
+    margin-bottom: 8px;
+    animation: titlePulse 3s ease-in-out infinite;
+  }
+  .screen-subtitle {
+    font-size: 20px;
+    color: var(--neon-purple);
+    letter-spacing: 8px;
+    margin-bottom: 50px;
+    text-shadow: 0 0 10px var(--neon-purple);
+  }
+
+  @keyframes titlePulse {
+    0%,100% { text-shadow: 0 0 20px var(--neon-gold), 0 0 50px rgba(255,215,0,0.4); }
+    50% { text-shadow: 0 0 30px var(--neon-gold), 0 0 80px rgba(255,215,0,0.7), 0 0 120px rgba(255,215,0,0.2); }
+  }
+
+  .menu-btn {
+    font-family: 'VT323', monospace;
+    font-size: 28px;
+    letter-spacing: 4px;
+    color: var(--neon-cyan);
+    background: transparent;
+    border: 1px solid var(--neon-cyan);
+    padding: 10px 40px;
+    margin: 8px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.2s;
+    min-width: 260px;
+    text-align: center;
+    box-shadow: 0 0 8px rgba(0,255,255,0.2), inset 0 0 8px rgba(0,255,255,0.05);
+  }
+  .menu-btn:hover, .menu-btn.selected {
+    color: var(--bg-dark);
+    background: var(--neon-cyan);
+    box-shadow: 0 0 20px var(--neon-cyan), 0 0 40px rgba(0,255,255,0.4);
+  }
+
+  /* ── INSTRUCTIONS PANEL ── */
+  .instr-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 30px; margin-top: 20px;
+    max-width: 700px;
+  }
+  .instr-col h3 {
+    font-size: 22px; color: var(--neon-purple);
+    text-shadow: 0 0 8px var(--neon-purple);
+    margin-bottom: 14px; letter-spacing: 3px;
+    border-bottom: 1px solid rgba(204,68,255,0.3);
+    padding-bottom: 6px;
+  }
+  .instr-row {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 10px; font-size: 20px;
+  }
+  .key {
+    display: inline-block;
+    background: rgba(255,215,0,0.1);
+    border: 1px solid var(--neon-gold);
+    border-radius: 3px;
+    padding: 2px 10px;
+    font-size: 18px;
+    color: var(--neon-gold);
+    box-shadow: 0 0 6px rgba(255,215,0,0.3);
+    min-width: 42px; text-align: center;
+  }
+
+  /* ── SCOREBOARD ── */
+  #scoreTable {
+    width: 500px; max-width: 90vw;
+    border-collapse: collapse;
+    margin-top: 20px;
+  }
+  #scoreTable th {
+    font-size: 20px; color: var(--neon-purple);
+    text-shadow: 0 0 8px var(--neon-purple);
+    border-bottom: 1px solid rgba(204,68,255,0.4);
+    padding: 8px 16px; text-align: left; letter-spacing: 2px;
+  }
+  #scoreTable td {
+    font-size: 24px; color: var(--neon-gold);
+    padding: 6px 16px;
+    border-bottom: 1px solid rgba(255,215,0,0.1);
+  }
+  #scoreTable tr:first-child td { color: var(--neon-cyan); font-size: 26px; }
+
+  /* ── GAME OVER / WIN ── */
+  .result-score { font-size: 40px; color: var(--neon-cyan); margin: 20px 0; text-shadow: 0 0 15px var(--neon-cyan); }
+  .result-label { font-size: 22px; color: #888; letter-spacing: 3px; margin-bottom: 30px; }
+
+  /* ── SCANLINES ── */
+  #scanlines {
+    position: fixed; inset: 0; pointer-events: none; z-index: 100;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px);
+  }
+
+  /* ── VIGNETTE ── */
+  #vignette {
+    position: fixed; inset: 0; pointer-events: none; z-index: 99;
+    background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.7) 100%);
+  }
+
+  /* ── WAVE ANNOUNCEMENT ── */
+  #waveAnnounce {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: 'Cinzel', serif;
+    font-size: clamp(24px, 4vw, 52px);
+    color: var(--neon-gold);
+    text-shadow: 0 0 30px var(--neon-gold);
+    pointer-events: none;
+    z-index: 15;
+    opacity: 0;
+    letter-spacing: 6px;
+    text-align: center;
+  }
+
+  /* ── BACK BUTTON ── */
+  .back-btn {
+    font-family: 'VT323', monospace;
+    font-size: 22px;
+    color: #666;
+    background: transparent;
+    border: 1px solid #333;
+    padding: 6px 24px;
+    cursor: pointer;
+    margin-top: 30px;
+    letter-spacing: 3px;
+    transition: all 0.2s;
+  }
+  .back-btn:hover { color: var(--neon-gold); border-color: var(--neon-gold); }
+
+  /* decorative rune border */
+  .rune-border {
+    border: 1px solid rgba(255,215,0,0.2);
+    padding: 30px 50px;
+    position: relative;
+    background: rgba(5,5,10,0.8);
+  }
+  .rune-border::before, .rune-border::after {
+    content: '❖';
+    position: absolute; top: -12px;
+    font-size: 20px; color: var(--neon-gold);
+    background: var(--bg-dark); padding: 0 8px;
+  }
+  .rune-border::before { left: 20px; }
+  .rune-border::after { right: 20px; }
+</style>
+</head>
+<body>
+<div id="gameContainer">
+  <canvas id="gameCanvas"></canvas>
+
+  <!-- HUD (visible during gameplay) -->
+  <div id="hud" class="hidden">
+    <div class="hud-block">
+      <div class="hud-label">SCORE</div>
+      <div class="hud-value" id="scoreDisplay">0</div>
+    </div>
+    <div class="hud-block" style="align-items:center">
+      <div class="hud-label">KNIGHT HP</div>
+      <div id="playerHealthBar"><div id="playerHealthFill" style="width:100%"></div></div>
+    </div>
+    <div class="hud-block" style="align-items:flex-end">
+      <div class="hud-label">LIVES</div>
+      <div class="hud-value" id="livesDisplay"></div>
+    </div>
+  </div>
+
+  <div id="waveAnnounce"></div>
+
+  <!-- MAIN MENU -->
+  <div id="menuScreen" class="screen">
+    <div class="screen-title">DARK CRUSADE</div>
+    <div class="screen-subtitle">— WRATH OF THE ASTARTES —</div>
+    <div class="rune-border">
+      <button class="menu-btn" id="btn-start">⚔ BEGIN CRUSADE</button>
+      <button class="menu-btn" id="btn-instructions">📜 CODEX</button>
+      <button class="menu-btn" id="btn-scores">🏆 HALL OF FALLEN</button>
+    </div>
+  </div>
+
+  <!-- INSTRUCTIONS -->
+  <div id="instructionsScreen" class="screen hidden">
+    <div class="screen-title" style="font-size:clamp(24px,4vw,50px)">CODEX OF BATTLE</div>
+    <div class="rune-border">
+      <div class="instr-grid">
+        <div class="instr-col">
+          <h3>⌨ KEYBOARD</h3>
+          <div class="instr-row"><span class="key">A</span><span class="key">D</span> — Move</div>
+          <div class="instr-row"><span class="key">W</span><span class="key">S</span> — Ascend / Descend</div>
+          <div class="instr-row"><span class="key">SPACE</span> — Plasma Bolt</div>
+          <div class="instr-row"><span class="key">ESC</span> — Retreat to Menu</div>
+        </div>
+        <div class="instr-col">
+          <h3>🎮 GAMEPAD</h3>
+          <div class="instr-row">L-Stick / D-Pad — Move</div>
+          <div class="instr-row"><span class="key">A / ✕</span> — Plasma Bolt</div>
+          <div class="instr-row"><span class="key">START</span> — Pause/Menu</div>
+        </div>
+      </div>
+      <div style="margin-top:24px; font-size:20px; color:#888; line-height:1.8; text-align:center">
+        Purge all Void Demons to advance waves.<br>
+        Each daemon has a health bar — fire true, Battle-Brother.<br>
+        3 lives per crusade. Score multiplies with wave.
+      </div>
+    </div>
+    <button class="back-btn" id="btn-back-instr">← BACK</button>
+  </div>
+
+  <!-- SCOREBOARD -->
+  <div id="scoresScreen" class="screen hidden">
+    <div class="screen-title" style="font-size:clamp(24px,4vw,50px)">HALL OF FALLEN</div>
+    <div class="rune-border">
+      <table id="scoreTable">
+        <tr><th>RANK</th><th>SCORE</th><th>WAVE</th></tr>
+      </table>
+    </div>
+    <button class="back-btn" id="btn-back-scores">← BACK</button>
+  </div>
+
+  <!-- GAME OVER -->
+  <div id="gameOverScreen" class="screen hidden">
+    <div class="screen-title" style="color:var(--neon-red); text-shadow:0 0 20px var(--neon-red)">SLAIN</div>
+    <div class="result-label">THE WARP CLAIMS ANOTHER SOUL</div>
+    <div class="result-score" id="finalScore">SCORE: 0</div>
+    <div class="result-label" id="finalWave">WAVE: 1</div>
+    <button class="menu-btn" id="btn-retry">⚔ RISE AGAIN</button>
+    <button class="back-btn" id="btn-go-menu-over">← MAIN MENU</button>
+  </div>
+
+  <!-- WIN -->
+  <div id="winScreen" class="screen hidden">
+    <div class="screen-title" style="color:var(--neon-green); text-shadow:0 0 20px var(--neon-green)">VICTORY</div>
+    <div class="result-label">FOR THE EMPEROR — THE WARP IS CLEANSED</div>
+    <div class="result-score" id="winScore">SCORE: 0</div>
+    <button class="menu-btn" id="btn-new-crusade">⚔ NEW CRUSADE</button>
+    <button class="back-btn" id="btn-go-menu-win">← MAIN MENU</button>
+  </div>
+</div>
+
+<div id="scanlines"></div>
+<div id="vignette"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  DARK CRUSADE — VOID KNIGHTS  |  Full Game Engine
+// ═══════════════════════════════════════════════════════════
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+// Resize
+function resize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', () => { resize(); if (G.running) drawBg(); });
+
+// ── Palette
+const COL = {
+  gold:'#ffd700', red:'#ff2244', cyan:'#00ffff',
+  purple:'#cc44ff', green:'#00ff88', white:'#ffffff',
+  orange:'#ff8800', darkRed:'#880011', darkPurple:'#220033',
+};
+
+// ── Game state
+const G = {
+  running: false,
+  score: 0,
+  lives: 3,
+  wave: 1,
+  maxWaves: 5,
+  paused: false,
+};
+
+// ── Input
+const Keys = {};
+const Pad = { ax:0, ay:0, fire:false, start:false, _firePrev:false };
+
+window.addEventListener('keydown', e => {
+  Keys[e.code] = true;
+  if (e.code === 'Escape' && G.running) exitToMenu();
+  if (e.code === 'Space') e.preventDefault();
+});
+window.addEventListener('keyup', e => { Keys[e.code] = false; });
+
+function pollGamepad() {
+  const gps = navigator.getGamepads ? navigator.getGamepads() : [];
+  for (let gp of gps) {
+    if (!gp) continue;
+    Pad.ax = gp.axes[0] || 0;
+    Pad.ay = gp.axes[1] || 0;
+    // Also D-pad
+    if (gp.buttons[14] && gp.buttons[14].pressed) Pad.ax = -1;
+    if (gp.buttons[15] && gp.buttons[15].pressed) Pad.ax = 1;
+    if (gp.buttons[12] && gp.buttons[12].pressed) Pad.ay = -1;
+    if (gp.buttons[13] && gp.buttons[13].pressed) Pad.ay = 1;
+    const fireCurrent = (gp.buttons[0] && gp.buttons[0].pressed) || (gp.buttons[2] && gp.buttons[2].pressed);
+    Pad.fire = fireCurrent && !Pad._firePrev;
+    Pad._firePrev = fireCurrent;
+    if (gp.buttons[9] && gp.buttons[9].pressed) exitToMenu();
+    break;
+  }
+}
+
+// ── Entities
+let player, bolts, enemies, particles, explosions, stars, bgClouds;
+
+// ── Sprite drawing helpers (all pixel art via canvas)
+function px(x, y, w, h, col) {
+  ctx.fillStyle = col;
+  ctx.fillRect(x, y, w, h);
+}
+
+// ── WH40K Space Marine Terminator sprite
+function drawKnight(x, y, scale, flash) {
+  const s = scale || 2;
+  ctx.save();
+  ctx.translate(x, y);
+
+  const f = flash;
+  // Color palette — Crimson Fists chapter homage
+  const armorBase   = f ? '#ffffff' : '#1a1a2e';
+  const armorPlate  = f ? '#ffffff' : '#16213e';
+  const armorTrim   = f ? '#ffffff' : '#e94560';
+  const gold        = f ? '#ffffff' : '#ffd700';
+  const visorGlow   = f ? '#ffffff' : '#00ffff';
+  const powerFist   = f ? '#ffffff' : '#ff6600';
+  const cableCol    = f ? '#ffffff' : '#444466';
+  const backpackCol = f ? '#ffffff' : '#0f3460';
+
+  // ── Outer power aura (reactor halo)
+  const aura = ctx.createRadialGradient(0, 0, 6*s, 0, 0, 30*s);
+  aura.addColorStop(0, 'rgba(233,69,96,0.20)');
+  aura.addColorStop(0.5,'rgba(0,200,255,0.08)');
+  aura.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = aura;
+  ctx.beginPath(); ctx.arc(0, 0, 30*s, 0, Math.PI*2); ctx.fill();
+
+  // ── Backpack / life-support (behind torso)
+  ctx.fillStyle = backpackCol;
+  ctx.fillRect(6*s, -20*s, 10*s, 22*s);
+  // Exhaust vents on backpack
+  ctx.fillStyle = '#ff4400';
+  ctx.shadowColor = '#ff4400'; ctx.shadowBlur = 8;
+  for (let i = 0; i < 3; i++) {
+    ctx.fillRect(7*s + i*3*s, -18*s, 2*s, 3*s);
+  }
+  ctx.shadowBlur = 0;
+
+  // ── Legs — massive greaves
+  ctx.fillStyle = armorBase;
+  ctx.fillRect(-12*s,  6*s, 10*s, 14*s); // left leg
+  ctx.fillRect(  2*s,  6*s, 10*s, 14*s); // right leg
+  // Kneecap armor bolts
+  ctx.fillStyle = gold;
+  ctx.fillRect(-11*s,  8*s, 8*s, 3*s);
+  ctx.fillRect(  3*s,  8*s, 8*s, 3*s);
+  // Foot plates
+  ctx.fillStyle = armorTrim;
+  ctx.fillRect(-13*s, 18*s, 11*s, 4*s);
+  ctx.fillRect(  2*s, 18*s, 11*s, 4*s);
+
+  // ── Groin/belt plate
+  ctx.fillStyle = armorPlate;
+  ctx.fillRect(-10*s,  2*s, 20*s, 6*s);
+  ctx.fillStyle = gold;
+  ctx.fillRect( -4*s,  3*s,  8*s, 4*s); // aquila belt buckle stand-in
+  ctx.fillStyle = '#ff0000';
+  ctx.fillRect( -2*s,  4*s,  4*s, 2*s); // red gem
+
+  // ── Main torso — wide Terminator chest
+  ctx.fillStyle = armorBase;
+  ctx.fillRect(-14*s, -16*s, 28*s, 24*s);
+  // Chest eagle / chapter badge
+  ctx.fillStyle = gold;
+  ctx.shadowColor = gold; ctx.shadowBlur = 6;
+  ctx.fillRect(-6*s, -14*s, 12*s, 3*s); // top bar
+  ctx.fillRect(-8*s, -12*s,  4*s, 8*s); // left wing
+  ctx.fillRect( 4*s, -12*s,  4*s, 8*s); // right wing
+  ctx.fillRect(-3*s, -14*s,  6*s,10*s); // body
+  ctx.shadowBlur = 0;
+  // Chest trim lines
+  ctx.fillStyle = armorTrim;
+  ctx.fillRect(-14*s, -16*s, 28*s, 2*s); // top trim
+  ctx.fillRect(-14*s,   6*s, 28*s, 2*s); // bottom trim
+
+  // ── Massive pauldrons (shoulder guards)
+  // Left shoulder
+  ctx.fillStyle = armorPlate;
+  ctx.fillRect(-26*s, -18*s, 14*s, 16*s);
+  ctx.fillStyle = armorTrim;
+  ctx.fillRect(-26*s, -18*s, 14*s,  3*s);
+  ctx.fillRect(-26*s,  -3*s, 14*s,  2*s);
+  // Chapter symbol on left shoulder (fist)
+  ctx.fillStyle = gold;
+  ctx.shadowColor = gold; ctx.shadowBlur = 4;
+  ctx.fillRect(-22*s, -15*s, 6*s, 8*s);
+  ctx.fillRect(-23*s, -13*s, 8*s, 3*s);
+  ctx.shadowBlur = 0;
+  // Right shoulder
+  ctx.fillStyle = armorPlate;
+  ctx.fillRect( 12*s, -18*s, 14*s, 16*s);
+  ctx.fillStyle = armorTrim;
+  ctx.fillRect( 12*s, -18*s, 14*s,  3*s);
+  ctx.fillRect( 12*s,  -3*s, 14*s,  2*s);
+
+  // ── Left arm — Power Fist
+  ctx.fillStyle = armorBase;
+  ctx.fillRect(-24*s,  -4*s, 10*s, 12*s); // forearm
+  // Power fist head
+  ctx.fillStyle = powerFist;
+  ctx.shadowColor = powerFist; ctx.shadowBlur = 14;
+  ctx.fillRect(-26*s,   4*s, 14*s,  8*s); // knuckle plate
+  ctx.fillRect(-24*s,   2*s, 10*s,  4*s); // upper fist
+  // Energy crackling lines on fist
+  ctx.strokeStyle = '#ffaa00';
+  ctx.lineWidth = 1.5; ctx.shadowBlur = 8;
+  ctx.beginPath(); ctx.moveTo(-25*s, 5*s); ctx.lineTo(-20*s, 7*s); ctx.lineTo(-22*s, 11*s); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-18*s, 5*s); ctx.lineTo(-14*s, 8*s); ctx.stroke();
+  ctx.shadowBlur = 0;
+  // Fingers
+  ctx.fillStyle = '#cc4400';
+  for (let i = 0; i < 3; i++) ctx.fillRect(-24*s + i*4*s, 10*s, 3*s, 5*s);
+
+  // ── Right arm — Plasma Cannon
+  ctx.fillStyle = armorBase;
+  ctx.fillRect( 14*s,  -4*s, 10*s, 12*s); // upper arm
+  // Cannon body
+  ctx.fillStyle = '#223355';
+  ctx.fillRect( 20*s,  -8*s, 12*s, 10*s);
+  ctx.fillStyle = armorTrim;
+  ctx.fillRect( 20*s,  -8*s, 12*s,  2*s);
+  ctx.fillRect( 20*s,   0*s, 12*s,  2*s);
+  // Plasma coils
+  ctx.fillStyle = visorGlow;
+  ctx.shadowColor = visorGlow; ctx.shadowBlur = 12;
+  ctx.fillRect( 22*s,  -6*s,  2*s,  6*s);
+  ctx.fillRect( 26*s,  -6*s,  2*s,  6*s);
+  ctx.fillRect( 30*s,  -6*s,  2*s,  6*s);
+  // Cannon barrel
+  ctx.fillStyle = '#334466';
+  ctx.fillRect( 30*s, -10*s,  4*s, 14*s);
+  ctx.fillStyle = visorGlow;
+  ctx.fillRect( 31*s, -12*s,  2*s,  4*s);
+  ctx.shadowBlur = 0;
+
+  // ── Cables / hydraulics
+  ctx.strokeStyle = cableCol;
+  ctx.lineWidth = 2*s;
+  ctx.beginPath(); ctx.moveTo(-14*s, -8*s); ctx.bezierCurveTo(-18*s,-4*s,-18*s,2*s,-16*s,4*s); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo( 14*s, -8*s); ctx.bezierCurveTo( 18*s,-4*s, 18*s,2*s, 16*s,4*s); ctx.stroke();
+
+  // ── Helmet — brutal Terminator helm
+  ctx.fillStyle = armorBase;
+  ctx.fillRect(-10*s, -34*s, 20*s, 20*s);
+  // Forehead ridge
+  ctx.fillStyle = armorPlate;
+  ctx.fillRect(-10*s, -34*s, 20*s,  4*s);
+  // Cheek plates
+  ctx.fillStyle = armorPlate;
+  ctx.fillRect(-10*s, -28*s,  4*s, 12*s);
+  ctx.fillRect(  6*s, -28*s,  4*s, 12*s);
+  // Respirator grille (bottom of helm)
+  ctx.fillStyle = '#111122';
+  ctx.fillRect( -7*s, -20*s, 14*s,  5*s);
+  ctx.fillStyle = '#444';
+  for (let i = 0; i < 4; i++) ctx.fillRect(-5*s + i*3*s, -19*s, 2*s, 3*s);
+  // Visor — twin lenses
+  ctx.fillStyle = '#000';
+  ctx.fillRect( -7*s, -30*s, 14*s,  7*s);
+  ctx.fillStyle = visorGlow;
+  ctx.shadowColor = visorGlow; ctx.shadowBlur = 16;
+  ctx.fillRect( -6*s, -29*s,  5*s,  5*s); // left lens
+  ctx.fillRect(  1*s, -29*s,  5*s,  5*s); // right lens
+  // Lens scan line
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect( -6*s, -27*s,  5*s,  1*s);
+  ctx.fillRect(  1*s, -27*s,  5*s,  1*s);
+  ctx.shadowBlur = 0;
+  // Crux Terminatus on helm top
+  ctx.fillStyle = gold;
+  ctx.shadowColor = gold; ctx.shadowBlur = 8;
+  ctx.fillRect( -2*s, -38*s,  4*s,  6*s);
+  ctx.fillRect( -5*s, -36*s, 10*s,  2*s);
+  ctx.shadowBlur = 0;
+  // Helmet trim
+  ctx.fillStyle = armorTrim;
+  ctx.fillRect(-10*s, -34*s, 20*s,  2*s);
+
+  ctx.restore();
+}
+
+// Plasma bolt (WH40K style — hot core + energy trail)
+function drawBolt(x, y, scale) {
+  const s = scale || 1.5;
+  ctx.save();
+  ctx.translate(x, y);
+
+  // Outer plasma glow
+  const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 10*s);
+  g.addColorStop(0,   'rgba(0,255,255,0.9)');
+  g.addColorStop(0.4, 'rgba(0,120,255,0.5)');
+  g.addColorStop(1,   'rgba(0,0,100,0)');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(0, 0, 10*s, 0, Math.PI*2); ctx.fill();
+
+  // Energy trail
+  ctx.shadowColor = '#00ffff'; ctx.shadowBlur = 18;
+  ctx.fillStyle = 'rgba(0,200,255,0.4)';
+  ctx.fillRect(-2*s,  0, 4*s, 20*s);
+  ctx.fillStyle = 'rgba(100,220,255,0.6)';
+  ctx.fillRect(-1*s,  0, 2*s, 14*s);
+
+  // Core bolt body
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(-3*s, -10*s, 6*s, 10*s);
+  ctx.fillStyle = '#00ffff';
+  ctx.fillRect(-2*s, -12*s, 4*s, 14*s);
+
+  // Hot nose tip
+  ctx.fillStyle = '#ffffff';
+  ctx.shadowColor = '#ffffff'; ctx.shadowBlur = 12;
+  ctx.beginPath(); ctx.arc(0, -12*s, 3*s, 0, Math.PI*2); ctx.fill();
+  ctx.shadowBlur = 0;
+
+  ctx.restore();
+}
+
+// Void Demon sprites — all drawn at s=2 to match hero scale
+function drawDemon(x, y, type, phase, hp, maxHp, flash) {
+  ctx.save();
+  ctx.translate(x, y);
+
+  const bob = Math.sin(Date.now() / 400 + phase) * 3;
+  ctx.translate(0, bob);
+
+  const f = flash ? '#ffffff' : null;
+  const s = 2; // same scale as hero
+
+  if (type === 0) drawDemonA(f, s);
+  else if (type === 1) drawDemonB(f, s);
+  else if (type === 2) drawDemonC(f, s);
+  else if (type === 3) drawDemonD(f, s);
+
+  // Health bar — positioned above the scaled sprite
+  const barH = type === 3 ? 90 : 72; // how far above center
+  const bw = type === 3 ? 100 : 80, bh = 8;
+  const bx = -bw/2, by = -barH;
+  ctx.fillStyle = 'rgba(0,0,0,0.7)';
+  ctx.fillRect(bx-1, by-1, bw+2, bh+2);
+  ctx.fillStyle = '#440000';
+  ctx.fillRect(bx, by, bw, bh);
+  const ratio = Math.max(0, hp / maxHp);
+  const hpColor = ratio > 0.5 ? COL.green : ratio > 0.25 ? COL.orange : COL.red;
+  ctx.fillStyle = hpColor;
+  ctx.shadowColor = hpColor; ctx.shadowBlur = 6;
+  ctx.fillRect(bx, by, bw * ratio, bh);
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = 'rgba(255,200,0,0.5)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(bx-1, by-1, bw+2, bh+2);
+
+  ctx.restore();
+}
+
+function drawDemonA(f, s) { // Wraith — giant warp ghost skull
+  const c1 = f||COL.purple, c2 = f||'#6622aa', c3 = f||'#ff44ff';
+
+  // Warp aura
+  const aura = ctx.createRadialGradient(0,-4*s,2*s,0,-4*s,28*s);
+  aura.addColorStop(0,'rgba(180,0,255,0.18)'); aura.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle = aura;
+  ctx.beginPath(); ctx.arc(0,-4*s,28*s,0,Math.PI*2); ctx.fill();
+
+  // Tattered cloak body
+  ctx.fillStyle = c2;
+  ctx.beginPath();
+  ctx.moveTo(-18*s,10*s); ctx.lineTo(-26*s,36*s); ctx.lineTo(-12*s,26*s);
+  ctx.lineTo(0,38*s); ctx.lineTo(12*s,26*s); ctx.lineTo(26*s,36*s);
+  ctx.lineTo(18*s,10*s); ctx.closePath(); ctx.fill();
+  // Cloak shred lines
+  ctx.strokeStyle = c1; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(-18*s,14*s); ctx.lineTo(-20*s,30*s); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-8*s,18*s); ctx.lineTo(-10*s,34*s); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(8*s,18*s); ctx.lineTo(10*s,34*s); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(18*s,14*s); ctx.lineTo(20*s,30*s); ctx.stroke();
+
+  // Skull
+  ctx.fillStyle = c1;
+  ctx.beginPath(); ctx.arc(0,-6*s,18*s,0,Math.PI*2); ctx.fill();
+  // Cheekbones
+  ctx.fillStyle = c2;
+  ctx.fillRect(-18*s,-4*s,7*s,8*s);
+  ctx.fillRect(11*s,-4*s,7*s,8*s);
+  // Eye sockets — glowing
+  ctx.fillStyle = '#000';
+  ctx.beginPath(); ctx.arc(-8*s,-8*s,6*s,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(8*s,-8*s,6*s,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle = c3;
+  ctx.shadowColor = c3; ctx.shadowBlur = 18;
+  ctx.beginPath(); ctx.arc(-8*s,-8*s,4*s,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(8*s,-8*s,4*s,0,Math.PI*2); ctx.fill();
+  ctx.shadowBlur = 0;
+  // Nose cavity
+  ctx.fillStyle = '#000';
+  ctx.fillRect(-2*s,-4*s,4*s,4*s);
+  // Jaw
+  ctx.fillStyle = c2;
+  ctx.fillRect(-12*s,4*s,24*s,10*s);
+  ctx.fillStyle = '#000';
+  for(let i=0;i<4;i++) ctx.fillRect(-9*s+i*5*s,5*s,3*s,7*s);
+  // Crown of void energy
+  ctx.strokeStyle = c3; ctx.lineWidth = 2; ctx.shadowColor = c3; ctx.shadowBlur = 10;
+  for(let i=0;i<5;i++){
+    const a = -Math.PI*0.9 + i*(Math.PI*1.8/4);
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(a)*18*s, -6*s+Math.sin(a)*18*s);
+    ctx.lineTo(Math.cos(a)*26*s, -6*s+Math.sin(a)*26*s);
+    ctx.stroke();
+  }
+  ctx.shadowBlur = 0;
+}
+
+function drawDemonB(f, s) { // Gargoyle — massive winged stone demon
+  const c1 = f||'#cc4400', c2 = f||'#884422', c3 = f||COL.orange;
+
+  // Wing membrane glow
+  const wAura = ctx.createRadialGradient(0,0,8*s,0,0,50*s);
+  wAura.addColorStop(0,'rgba(200,80,0,0.10)'); wAura.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle = wAura; ctx.beginPath(); ctx.arc(0,0,50*s,0,Math.PI*2); ctx.fill();
+
+  // Wings
+  ctx.fillStyle = c2;
+  ctx.beginPath();
+  ctx.moveTo(-12*s,-12*s); ctx.lineTo(-50*s,0); ctx.lineTo(-44*s,22*s);
+  ctx.lineTo(-26*s,18*s); ctx.lineTo(-12*s,10*s); ctx.closePath(); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(12*s,-12*s); ctx.lineTo(50*s,0); ctx.lineTo(44*s,22*s);
+  ctx.lineTo(26*s,18*s); ctx.lineTo(12*s,10*s); ctx.closePath(); ctx.fill();
+  // Wing ribs
+  ctx.strokeStyle = '#331100'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(-12*s,-4*s); ctx.lineTo(-46*s,4*s); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-12*s,2*s); ctx.lineTo(-38*s,18*s); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(12*s,-4*s); ctx.lineTo(46*s,4*s); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(12*s,2*s); ctx.lineTo(38*s,18*s); ctx.stroke();
+
+  // Body
+  ctx.fillStyle = c1;
+  ctx.fillRect(-16*s,-16*s,32*s,36*s);
+  // Belly scales
+  ctx.fillStyle = c2;
+  for(let i=0;i<3;i++) ctx.fillRect(-10*s,(-6+i*10)*s,20*s,6*s);
+  // Head
+  ctx.fillStyle = c2;
+  ctx.fillRect(-14*s,-30*s,28*s,16*s);
+  // Snout
+  ctx.fillStyle = c1;
+  ctx.fillRect(-8*s,-24*s,16*s,10*s);
+  // Horns
+  ctx.fillStyle = c3;
+  ctx.shadowColor = c3; ctx.shadowBlur = 8;
+  ctx.fillRect(-14*s,-44*s,5*s,16*s);
+  ctx.fillRect(9*s,-44*s,5*s,16*s);
+  ctx.shadowBlur = 0;
+  // Eyes
+  ctx.fillStyle = c3;
+  ctx.shadowColor = c3; ctx.shadowBlur = 12;
+  ctx.beginPath(); ctx.arc(-7*s,-24*s,5*s,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(7*s,-24*s,5*s,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#000';
+  ctx.beginPath(); ctx.arc(-7*s,-24*s,2*s,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(7*s,-24*s,2*s,0,Math.PI*2); ctx.fill();
+  ctx.shadowBlur = 0;
+  // Teeth
+  ctx.fillStyle = '#eeeecc';
+  for(let i=0;i<4;i++) ctx.fillRect(-7*s+i*4*s,-16*s,2*s,5*s);
+  // Talons
+  ctx.fillStyle = '#111';
+  ctx.fillRect(-22*s,16*s,7*s,14*s); ctx.fillRect(15*s,16*s,7*s,14*s);
+  ctx.fillStyle = '#555';
+  for(let i=0;i<3;i++){
+    ctx.fillRect(-22*s+i*2*s,28*s,2*s,5*s);
+    ctx.fillRect(15*s+i*2*s,28*s,2*s,5*s);
+  }
+}
+
+function drawDemonC(f, s) { // Lich — towering skeletal chaos sorcerer
+  const c1 = f||'#00ccff', c2 = f||'#003344', c3 = f||COL.cyan;
+
+  // Warp aura
+  ctx.shadowColor = c3; ctx.shadowBlur = 20;
+  const la = ctx.createRadialGradient(0,0,4*s,0,0,30*s);
+  la.addColorStop(0,'rgba(0,200,255,0.12)'); la.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle = la; ctx.beginPath(); ctx.arc(0,0,30*s,0,Math.PI*2); ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // Robe — wide and tattered
+  ctx.fillStyle = c2;
+  ctx.beginPath();
+  ctx.moveTo(-14*s,2*s); ctx.lineTo(-20*s,40*s); ctx.lineTo(-6*s,32*s);
+  ctx.lineTo(0,40*s); ctx.lineTo(6*s,32*s); ctx.lineTo(20*s,40*s);
+  ctx.lineTo(14*s,2*s); ctx.closePath(); ctx.fill();
+  // Robe runes
+  ctx.fillStyle = c3; ctx.shadowColor = c3; ctx.shadowBlur = 6;
+  ctx.fillRect(-4*s,10*s,8*s,2*s);
+  ctx.fillRect(-4*s,16*s,8*s,2*s);
+  ctx.fillRect(-4*s,22*s,8*s,2*s);
+  ctx.shadowBlur = 0;
+
+  // Bone arms
+  ctx.fillStyle = '#cccccc';
+  ctx.fillRect(-28*s,-6*s,14*s,5*s); // left upper arm
+  ctx.fillRect(-32*s,-4*s,7*s,7*s);  // left hand
+  ctx.fillRect(14*s,-6*s,14*s,5*s);  // right upper arm
+  ctx.fillRect(25*s,-4*s,7*s,7*s);   // right hand (holding staff)
+  // Finger bones
+  ctx.fillStyle = '#aaaaaa';
+  for(let i=0;i<3;i++) ctx.fillRect(-33*s+i*2*s,2*s,1.5*s,6*s);
+
+  // Ribcage torso
+  ctx.fillStyle = '#bbbbbb';
+  ctx.fillRect(-12*s,-2*s,24*s,22*s);
+  ctx.fillStyle = c2;
+  for(let i=0;i<4;i++) ctx.fillRect(-10*s,(2+i*5)*s,20*s,3*s);
+  // Spine
+  ctx.fillStyle = '#999';
+  ctx.fillRect(-2*s,-2*s,4*s,24*s);
+
+  // Skull — elongated arcane
+  ctx.fillStyle = '#dddddd';
+  ctx.fillRect(-12*s,-30*s,24*s,30*s);
+  ctx.beginPath(); ctx.arc(0,-30*s,12*s,Math.PI,0); ctx.fill();
+  // Jaw
+  ctx.fillStyle = '#bbbbbb';
+  ctx.fillRect(-10*s,-4*s,20*s,6*s);
+  ctx.fillStyle = '#222';
+  for(let i=0;i<4;i++) ctx.fillRect(-7*s+i*4*s,-3*s,2.5*s,5*s);
+  // Eye sockets
+  ctx.fillStyle = '#000';
+  ctx.fillRect(-10*s,-26*s,8*s,8*s); ctx.fillRect(2*s,-26*s,8*s,8*s);
+  ctx.fillStyle = c3; ctx.shadowColor = c3; ctx.shadowBlur = 18;
+  ctx.beginPath(); ctx.arc(-6*s,-22*s,4*s,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(6*s,-22*s,4*s,0,Math.PI*2); ctx.fill();
+  ctx.shadowBlur = 0;
+  // Arcane crown
+  ctx.fillStyle = COL.gold; ctx.shadowColor = COL.gold; ctx.shadowBlur = 10;
+  ctx.fillRect(-12*s,-38*s,24*s,8*s);
+  for(let i=0;i<4;i++) ctx.fillRect(-9*s+i*6*s,-44*s,4*s,8*s);
+  ctx.shadowBlur = 0;
+
+  // Staff (right side, tall)
+  ctx.strokeStyle = '#886644'; ctx.lineWidth = 3*s;
+  ctx.beginPath(); ctx.moveTo(30*s,0); ctx.lineTo(30*s,-60*s); ctx.stroke();
+  // Staff skull topper
+  ctx.fillStyle = '#cccccc';
+  ctx.beginPath(); ctx.arc(30*s,-60*s,8*s,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle = c3; ctx.shadowColor = c3; ctx.shadowBlur = 16;
+  ctx.beginPath(); ctx.arc(28*s,-62*s,3*s,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(33*s,-62*s,3*s,0,Math.PI*2); ctx.fill();
+  ctx.shadowBlur = 0;
+  // Orbiting chaos star
+  const ot = Date.now()/600;
+  ctx.fillStyle = c3; ctx.shadowColor = c3; ctx.shadowBlur = 12;
+  ctx.beginPath(); ctx.arc(30*s + Math.cos(ot)*14*s, -60*s + Math.sin(ot)*14*s, 3*s, 0, Math.PI*2); ctx.fill();
+  ctx.shadowBlur = 0;
+}
+
+function drawDemonD(f, s) { // Void Titan — colossal chaos space armour
+  const c1 = f||'#110022', c2 = f||COL.purple, c3 = f||'#ff0088';
+
+  // Titan aura — pulsing void
+  const ta = ctx.createRadialGradient(0,0,8*s,0,0,45*s);
+  ta.addColorStop(0,'rgba(200,0,120,0.22)'); ta.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle = ta; ctx.beginPath(); ctx.arc(0,0,45*s,0,Math.PI*2); ctx.fill();
+
+  // Legs — thick armoured
+  ctx.fillStyle = c1;
+  ctx.fillRect(-22*s,12*s,18*s,28*s); ctx.fillRect(4*s,12*s,18*s,28*s);
+  // Knee guards
+  ctx.fillStyle = c2;
+  ctx.fillRect(-24*s,18*s,20*s,8*s); ctx.fillRect(4*s,18*s,20*s,8*s);
+  // Feet — clawed
+  ctx.fillStyle = '#220033';
+  ctx.fillRect(-24*s,38*s,20*s,6*s); ctx.fillRect(4*s,38*s,20*s,6*s);
+  ctx.fillStyle = '#553355';
+  for(let i=0;i<3;i++){
+    ctx.fillRect(-24*s+i*6*s,42*s,3*s,6*s);
+    ctx.fillRect(4*s+i*6*s,42*s,3*s,6*s);
+  }
+
+  // Groin / waist plate
+  ctx.fillStyle = c2;
+  ctx.fillRect(-20*s,6*s,40*s,8*s);
+
+  // Lower torso
+  ctx.fillStyle = c1;
+  ctx.fillRect(-22*s,-14*s,44*s,22*s);
+  // Void core crystal — chest
+  ctx.fillStyle = c3; ctx.shadowColor = c3; ctx.shadowBlur = 26;
+  ctx.fillRect(-10*s,-10*s,20*s,18*s);
+  // Crystal facets
+  ctx.fillStyle = '#ff44aa';
+  ctx.fillRect(-8*s,-8*s,4*s,14*s); ctx.fillRect(-2*s,-10*s,4*s,6*s);
+  ctx.shadowBlur = 0;
+
+  // Massive pauldrons
+  ctx.fillStyle = '#220033';
+  ctx.fillRect(-40*s,-22*s,18*s,22*s); ctx.fillRect(22*s,-22*s,18*s,22*s);
+  ctx.fillStyle = c2;
+  ctx.fillRect(-40*s,-22*s,18*s,4*s); ctx.fillRect(22*s,-22*s,18*s,4*s);
+  // Pauldron spikes
+  ctx.fillStyle = '#553366';
+  ctx.fillRect(-38*s,-30*s,4*s,10*s); ctx.fillRect(-30*s,-28*s,4*s,8*s);
+  ctx.fillRect(34*s,-30*s,4*s,10*s); ctx.fillRect(26*s,-28*s,4*s,8*s);
+
+  // Arms — massive
+  ctx.fillStyle = c1;
+  ctx.fillRect(-38*s,-4*s,16*s,18*s); // left arm
+  ctx.fillRect(22*s,-4*s,16*s,18*s); // right arm
+  // Left fist — power maul
+  ctx.fillStyle = '#330044';
+  ctx.fillRect(-42*s,10*s,22*s,12*s);
+  ctx.fillStyle = c3; ctx.shadowColor = c3; ctx.shadowBlur = 14;
+  ctx.fillRect(-42*s,10*s,22*s,4*s);
+  ctx.shadowBlur = 0;
+  // Right fist — void cannon
+  ctx.fillStyle = '#221133';
+  ctx.fillRect(22*s,10*s,22*s,12*s);
+  ctx.fillStyle = c2; ctx.shadowColor = c2; ctx.shadowBlur = 12;
+  ctx.fillRect(22*s,10*s,22*s,3*s);
+  ctx.fillRect(22*s,19*s,22*s,3*s);
+  // Cannon barrel
+  ctx.fillStyle = '#110022';
+  ctx.fillRect(40*s,4*s,6*s,22*s);
+  ctx.fillStyle = c3; ctx.shadowColor = c3; ctx.shadowBlur = 16;
+  ctx.fillRect(41*s,2*s,4*s,6*s);
+  ctx.shadowBlur = 0;
+
+  // Neck
+  ctx.fillStyle = '#1a0033';
+  ctx.fillRect(-8*s,-28*s,16*s,10*s);
+
+  // Head — massive horned helm
+  ctx.fillStyle = '#1a0033';
+  ctx.fillRect(-18*s,-50*s,36*s,24*s);
+  // Face plate
+  ctx.fillStyle = '#110022';
+  ctx.fillRect(-14*s,-48*s,28*s,20*s);
+  // Horns — curved and huge
+  ctx.fillStyle = c2;
+  ctx.fillRect(-20*s,-68*s,7*s,22*s);
+  ctx.fillRect(13*s,-68*s,7*s,22*s);
+  ctx.fillRect(-24*s,-60*s,5*s,12*s);
+  ctx.fillRect(19*s,-60*s,5*s,12*s);
+  // Eyes — 4 glowing pits
+  ctx.fillStyle = c3; ctx.shadowColor = c3; ctx.shadowBlur = 18;
+  for(let i=0;i<4;i++){
+    ctx.beginPath(); ctx.arc(-9*s+i*6*s,-38*s,4*s,0,Math.PI*2); ctx.fill();
+  }
+  ctx.shadowBlur = 0;
+  // Respirator grille
+  ctx.fillStyle = '#330044';
+  ctx.fillRect(-10*s,-32*s,20*s,6*s);
+  ctx.fillStyle = c2;
+  for(let i=0;i<4;i++) ctx.fillRect(-8*s+i*4*s,-31*s,2.5*s,4*s);
+  // Helmet trim
+  ctx.fillStyle = c2;
+  ctx.fillRect(-18*s,-50*s,36*s,3*s);
+
+  // Chains dragging
+  ctx.strokeStyle = '#443355'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(-30*s,24*s); ctx.lineTo(-46*s,44*s); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(30*s,24*s); ctx.lineTo(46*s,44*s); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-10*s,40*s); ctx.lineTo(-8*s,52*s); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(10*s,40*s); ctx.lineTo(8*s,52*s); ctx.stroke();
+}
+
+// ── Background
+let bgStarObjs = [];
+let bgRuinObjs = [];
+let bgNebulas = [];
+
+function initBg() {
+  bgStarObjs = [];
+  for (let i = 0; i < 180; i++) {
+    bgStarObjs.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      size: Math.random() * 2.5 + 0.5,
+      speed: Math.random() * 0.3 + 0.05,
+      brightness: Math.random(),
+      hue: Math.random() < 0.15 ? (Math.random() < 0.5 ? 'cyan' : 'purple') : 'white',
+    });
+  }
+  bgNebulas = [];
+  for (let i = 0; i < 5; i++) {
+    bgNebulas.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height * 0.7,
+      rx: 120 + Math.random() * 180,
+      ry: 60 + Math.random() * 100,
+      hue: Math.random() < 0.5 ? 'purple' : 'darkred',
+      alpha: 0.04 + Math.random() * 0.06,
+    });
+  }
+  bgRuinObjs = [];
+  const cols = Math.floor(canvas.width / 80) + 2;
+  for (let i = 0; i < cols; i++) {
+    const h = 80 + Math.random() * 140;
+    bgRuinObjs.push({
+      x: i * 80 + Math.random() * 20,
+      w: 30 + Math.random() * 30,
+      h,
+      battlements: Math.floor(Math.random() * 5) + 2,
+    });
+  }
+}
+
+function drawBg() {
+  const W = canvas.width, H = canvas.height;
+  // Sky gradient
+  const skyGrad = ctx.createLinearGradient(0,0,0,H);
+  skyGrad.addColorStop(0,   '#050008');
+  skyGrad.addColorStop(0.4, '#0a0015');
+  skyGrad.addColorStop(0.7, '#100520');
+  skyGrad.addColorStop(1,   '#1a0510');
+  ctx.fillStyle = skyGrad;
+  ctx.fillRect(0,0,W,H);
+
+  // Nebulas
+  for (const n of bgNebulas) {
+    const g = ctx.createRadialGradient(n.x,n.y,0,n.x,n.y,n.rx);
+    const col = n.hue === 'purple' ? '120,0,180' : '120,0,30';
+    g.addColorStop(0, `rgba(${col},${n.alpha})`);
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = g;
+    ctx.save();
+    ctx.scale(1, n.ry/n.rx);
+    ctx.beginPath();
+    ctx.arc(n.x, n.y*n.rx/n.ry, n.rx, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // Stars
+  for (const s of bgStarObjs) {
+    const twinkle = 0.5 + 0.5 * Math.sin(Date.now()/500 + s.brightness * 30);
+    ctx.globalAlpha = 0.4 + twinkle * 0.6;
+    if (s.hue === 'cyan') ctx.fillStyle = COL.cyan;
+    else if (s.hue === 'purple') ctx.fillStyle = COL.purple;
+    else ctx.fillStyle = '#ffffff';
+    ctx.fillRect(s.x, s.y, s.size, s.size);
+  }
+  ctx.globalAlpha = 1;
+
+  // Moon (cracked void moon)
+  const moonX = W * 0.82, moonY = H * 0.12;
+  const moonR = 44;
+  ctx.save();
+  ctx.shadowColor = 'rgba(100,0,200,0.6)'; ctx.shadowBlur = 40;
+  const mGrad = ctx.createRadialGradient(moonX-10,moonY-10,4,moonX,moonY,moonR);
+  mGrad.addColorStop(0,'#441166');
+  mGrad.addColorStop(0.6,'#220033');
+  mGrad.addColorStop(1,'#0a0018');
+  ctx.fillStyle = mGrad;
+  ctx.beginPath(); ctx.arc(moonX,moonY,moonR,0,Math.PI*2); ctx.fill();
+  // Cracks
+  ctx.strokeStyle = 'rgba(200,100,255,0.5)'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(moonX-15,moonY-10); ctx.lineTo(moonX+5,moonY+15); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(moonX+5,moonY+15); ctx.lineTo(moonX+20,moonY+5); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(moonX-15,moonY-10); ctx.lineTo(moonX-5,moonY-25); ctx.stroke();
+  ctx.shadowBlur=0;
+  ctx.restore();
+
+  // Ruined castle silhouette (bottom)
+  ctx.fillStyle = '#0d0008';
+  for (const r of bgRuinObjs) {
+    const bx = r.x, by = H - r.h;
+    ctx.fillRect(bx, by, r.w, r.h);
+    // Battlements
+    const bw2 = r.w / (r.battlements * 2);
+    for (let b = 0; b < r.battlements; b++) {
+      ctx.fillRect(bx + b*2*bw2, by - 18, bw2, 18);
+    }
+    // Window glow
+    if (Math.random() < 0.003 && r._glow === undefined) r._glow = true;
+    if (r._glow) {
+      ctx.fillStyle = 'rgba(200,80,0,0.4)';
+      ctx.fillRect(bx + r.w/2 - 4, by + 20, 8, 10);
+      ctx.fillStyle = '#0d0008';
+    }
+  }
+
+  // Ground glow
+  const groundGrad = ctx.createLinearGradient(0, H-80, 0, H);
+  groundGrad.addColorStop(0, 'rgba(150,0,30,0.15)');
+  groundGrad.addColorStop(1, 'rgba(80,0,15,0.0)');
+  ctx.fillStyle = groundGrad;
+  ctx.fillRect(0, H-80, W, 80);
+}
+
+// ── Particle / Explosion
+function spawnExplosion(x, y, col, count) {
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 1 + Math.random() * 4;
+    particles.push({
+      x, y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      life: 1,
+      decay: 0.025 + Math.random() * 0.03,
+      size: 2 + Math.random() * 5,
+      col,
+    });
+  }
+}
+
+function updateParticles() {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx; p.y += p.vy;
+    p.vx *= 0.95; p.vy *= 0.95;
+    p.life -= p.decay;
+    if (p.life <= 0) { particles.splice(i, 1); continue; }
+    ctx.globalAlpha = p.life;
+    ctx.fillStyle = p.col;
+    ctx.shadowColor = p.col;
+    ctx.shadowBlur = 6;
+    ctx.fillRect(p.x - p.size/2, p.y - p.size/2, p.size, p.size);
+  }
+  ctx.globalAlpha = 1;
+  ctx.shadowBlur = 0;
+}
+
+// ── Player
+function createPlayer() {
+  return {
+    x: canvas.width / 2,
+    y: canvas.height * 0.80,
+    w: 32, h: 40,
+    speed: 4.5,
+    hp: 100,
+    maxHp: 100,
+    flashTimer: 0,
+    invincible: 0,
+    shotCooldown: 0,
+  };
+}
+
+function updatePlayer() {
+  const p = player;
+  const W = canvas.width, H = canvas.height;
+
+  let dx = 0, dy = 0;
+  if (Keys['KeyA'] || Keys['ArrowLeft'])  dx -= 1;
+  if (Keys['KeyD'] || Keys['ArrowRight']) dx += 1;
+  if (Keys['KeyW'] || Keys['ArrowUp'])    dy -= 1;
+  if (Keys['KeyS'] || Keys['ArrowDown'])  dy += 1;
+
+  const padDead = 0.15;
+  if (Math.abs(Pad.ax) > padDead) dx += Pad.ax;
+  if (Math.abs(Pad.ay) > padDead) dy += Pad.ay;
+
+  const len = Math.sqrt(dx*dx+dy*dy);
+  if (len > 1) { dx /= len; dy /= len; }
+
+  p.x = Math.max(p.w, Math.min(W - p.w, p.x + dx * p.speed));
+  p.y = Math.max(H * 0.5, Math.min(H - p.h, p.y + dy * p.speed));
+
+  if (p.flashTimer > 0) p.flashTimer--;
+  if (p.invincible > 0) p.invincible--;
+  if (p.shotCooldown > 0) p.shotCooldown--;
+
+  const shooting = Keys['Space'] || Pad.fire;
+  if (shooting && p.shotCooldown <= 0) {
+    bolts.push({ x: p.x, y: p.y - 20, vy: -12, w: 4, h: 14 });
+    p.shotCooldown = 14;
+    Pad.fire = false;
+  }
+}
+
+// ── Enemy definitions
+const WAVE_CONFIGS = [
+  // Wave 1: 3 Wraiths
+  [{ type:0, count:3, hp:80,  speed:0.8, drop:true  }],
+  // Wave 2: 2 Gargoyles + 1 Wraith
+  [{ type:1, count:2, hp:120, speed:1.0, drop:true  },
+   { type:0, count:1, hp:80,  speed:1.1, drop:false }],
+  // Wave 3: 1 Lich + 2 Gargoyles
+  [{ type:2, count:1, hp:200, speed:0.7, drop:true  },
+   { type:1, count:2, hp:140, speed:1.2, drop:true  }],
+  // Wave 4: 3 Liches
+  [{ type:2, count:3, hp:180, speed:0.9, drop:true  }],
+  // Wave 5: Void Titan (boss)
+  [{ type:3, count:1, hp:500, speed:0.5, drop:true  }],
+];
+
+function spawnWave(waveIdx) {
+  const config = WAVE_CONFIGS[Math.min(waveIdx, WAVE_CONFIGS.length-1)];
+  enemies = [];
+  let idx = 0;
+  let totalEnemies = config.reduce((s,c)=>s+c.count,0);
+  const cols = totalEnemies;
+  const W = canvas.width;
+  // Wider spacing to account for bigger sprites
+  const spacing = (W - 240) / Math.max(cols-1, 1);
+
+  // Hitbox sizes now match scaled sprites (s=2 coords * 2 = actual pixels)
+  // Wraith: ~40w x 80h, Gargoyle: ~100w x 88h, Lich: ~66w x 88h, Titan: ~100w x 120h
+  const HITBOXES = [
+    { w:40, h:80  }, // Wraith
+    { w:100, h:88 }, // Gargoyle (wings included in collision)
+    { w:66, h:88  }, // Lich
+    { w:100, h:120}, // Void Titan
+  ];
+
+  let pos = 0;
+  for (const def of config) {
+    for (let i = 0; i < def.count; i++) {
+      const t = def.type;
+      const spawnX = 120 + pos * spacing;
+      // More vertical room between rows for larger sprites
+      const rowY = canvas.height * 0.18 + Math.floor(idx / 3) * 160;
+      const hb = HITBOXES[t];
+      enemies.push({
+        x: spawnX,
+        y: rowY + (t===3 ? 60 : 0),
+        w: hb.w,
+        h: hb.h,
+        type: t,
+        hp: def.hp,
+        maxHp: def.hp,
+        speed: def.speed + (waveIdx * 0.08),
+        dx: (Math.random() < 0.5 ? 1 : -1) * def.speed,
+        phase: Math.random() * Math.PI * 2,
+        flashTimer: 0,
+        shotTimer: Math.floor(Math.random() * 120) + 60,
+        drop: def.drop,
+      });
+      pos++; idx++;
+    }
+  }
+}
+
+function updateEnemies() {
+  const W = canvas.width, H = canvas.height;
+  for (const e of enemies) {
+    e.x += e.dx;
+    if (e.x < e.w || e.x > W - e.w) e.dx *= -1;
+    if (e.flashTimer > 0) e.flashTimer--;
+    // Shooting
+    e.shotTimer--;
+    if (e.shotTimer <= 0) {
+      e.shotTimer = 80 + Math.floor(Math.random() * 100);
+      const angle = Math.atan2(player.y - e.y, player.x - e.x);
+      const spd = e.type === 3 ? 4.5 : 3.5;
+      enemyBolts.push({
+        x: e.x, y: e.y + 20,
+        vx: Math.cos(angle) * spd,
+        vy: Math.sin(angle) * spd,
+        type: e.type,
+      });
+    }
+  }
+}
+
+let enemyBolts = [];
+
+function updateEnemyBolts() {
+  const W = canvas.width, H = canvas.height;
+  for (let i = enemyBolts.length - 1; i >= 0; i--) {
+    const b = enemyBolts[i];
+    b.x += b.vx; b.y += b.vy;
+    if (b.x < 0 || b.x > W || b.y < 0 || b.y > H) {
+      enemyBolts.splice(i,1); continue;
+    }
+    // Hit player
+    if (player.invincible <= 0) {
+      const dx = b.x - player.x, dy = b.y - player.y;
+      if (Math.abs(dx) < 20 && Math.abs(dy) < 25) {
+        player.hp -= (b.type === 3 ? 18 : 10);
+        player.flashTimer = 18;
+        player.invincible = 55;
+        spawnExplosion(b.x, b.y, COL.red, 8);
+        enemyBolts.splice(i,1);
+        updateHUD();
+        if (player.hp <= 0) playerDied();
+        continue;
+      }
+    }
+    // Draw
+    const col = [COL.purple, COL.orange, COL.cyan, '#ff0088'][b.type];
+    ctx.save();
+    ctx.shadowColor = col; ctx.shadowBlur = 12;
+    ctx.fillStyle = col;
+    ctx.beginPath(); ctx.arc(b.x, b.y, 5, 0, Math.PI*2); ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.restore();
+  }
+}
+
+function updateBolts() {
+  for (let i = bolts.length - 1; i >= 0; i--) {
+    const b = bolts[i];
+    b.y += b.vy;
+    if (b.y < -20) { bolts.splice(i,1); continue; }
+
+    let hit = false;
+    for (let j = enemies.length - 1; j >= 0; j--) {
+      const e = enemies[j];
+      if (Math.abs(b.x - e.x) < e.w/2 && Math.abs(b.y - e.y) < e.h/2) {
+        const dmg = 20 + G.wave * 2;
+        e.hp -= dmg;
+        e.flashTimer = 10;
+        spawnExplosion(b.x, b.y, COL.cyan, 6);
+        hit = true;
+        if (e.hp <= 0) {
+          G.score += (100 + G.wave * 50) * (e.type + 1);
+          spawnExplosion(e.x, e.y, [COL.purple, COL.orange, COL.cyan, COL.purple][e.type], 30);
+          enemies.splice(j,1);
+          updateHUD();
+        }
+        break;
+      }
+    }
+    if (hit) { bolts.splice(i,1); continue; }
+    drawBolt(b.x, b.y, 1.5);
+  }
+}
+
+// ── HUD update
+function updateHUD() {
+  document.getElementById('scoreDisplay').textContent = G.score;
+  const ratio = player.hp / player.maxHp;
+  document.getElementById('playerHealthFill').style.width = (ratio * 100) + '%';
+  let lives = '';
+  for (let i = 0; i < G.lives; i++) lives += '⚔';
+  document.getElementById('livesDisplay').textContent = lives;
+}
+
+// ── Wave announce
+function showWaveAnnounce(text, sub) {
+  const el = document.getElementById('waveAnnounce');
+  el.innerHTML = text + (sub ? `<br><span style="font-size:0.55em;color:#cc44ff;">${sub}</span>` : '');
+  el.style.opacity = '1';
+  el.style.transition = 'opacity 0s';
+  setTimeout(() => {
+    el.style.transition = 'opacity 1.5s';
+    el.style.opacity = '0';
+  }, 2200);
+}
+
+// ── Death / progression
+function playerDied() {
+  G.lives--;
+  if (G.lives <= 0) {
+    setTimeout(gameOver, 600);
+  } else {
+    player.hp = player.maxHp;
+    player.invincible = 120;
+    spawnExplosion(player.x, player.y, COL.gold, 20);
+    updateHUD();
+    showWaveAnnounce('KNIGHT FALLEN', `${G.lives} LIVES REMAIN`);
+  }
+}
+
+function gameOver() {
+  G.running = false;
+  saveScore(G.score, G.wave);
+  document.getElementById('hud').classList.add('hidden');
+  document.getElementById('finalScore').textContent = 'SCORE: ' + G.score;
+  document.getElementById('finalWave').textContent = 'WAVE REACHED: ' + G.wave;
+  showScreen('gameOver');
+}
+
+function gameWin() {
+  G.running = false;
+  saveScore(G.score, G.wave);
+  document.getElementById('hud').classList.add('hidden');
+  document.getElementById('winScore').textContent = 'SCORE: ' + G.score;
+  showScreen('win');
+}
+
+function nextWave() {
+  G.wave++;
+  if (G.wave > G.maxWaves) { gameWin(); return; }
+  spawnWave(G.wave - 1);
+  enemyBolts = [];
+  showWaveAnnounce(
+    G.wave <= G.maxWaves ? `WAVE ${G.wave}` : 'FINAL WAVE',
+    G.wave === G.maxWaves ? '— THE VOID TITAN AWAKENS — FOR THE EMPEROR —' : ''
+  );
+}
+
+// ── Score persistence
+function saveScore(score, wave) {
+  let scores = JSON.parse(localStorage.getItem('dcScores') || '[]');
+  scores.push({ score, wave });
+  scores.sort((a,b) => b.score - a.score);
+  scores = scores.slice(0, 8);
+  localStorage.setItem('dcScores', JSON.stringify(scores));
+}
+function loadScores() {
+  return JSON.parse(localStorage.getItem('dcScores') || '[]');
+}
+
+// ── Screen management
+function showScreen(id) {
+  const ids = ['menu','instructions','scores','gameOver','win'];
+  for (const s of ids) {
+    document.getElementById(s+'Screen').classList.toggle('hidden', s !== id);
+  }
+}
+
+function showScoresScreen() {
+  const scores = loadScores();
+  const tbody = document.querySelector('#scoreTable');
+  const header = '<tr><th>RANK</th><th>SCORE</th><th>WAVE</th></tr>';
+  let rows = '';
+  if (scores.length === 0) {
+    rows = '<tr><td colspan="3" style="color:#555;text-align:center;padding:20px">NO RECORDS YET</td></tr>';
+  } else {
+    scores.forEach((s,i) => {
+      rows += `<tr><td>#${i+1}</td><td>${s.score}</td><td>${s.wave}</td></tr>`;
+    });
+  }
+  tbody.innerHTML = header + rows;
+  showScreen('scores');
+}
+
+function exitToMenu() {
+  G.running = false;
+  G.paused = false;
+  document.getElementById('hud').classList.add('hidden');
+  cancelAnimationFrame(G._raf);
+  showScreen('menu');
+}
+
+// ── Game start
+function startGame() {
+  G.score = 0; G.lives = 3; G.wave = 1; G.running = true;
+  player = createPlayer();
+  bolts = []; enemyBolts = []; enemies = []; particles = [];
+  initBg();
+  spawnWave(0);
+  document.getElementById('hud').classList.remove('hidden');
+  showScreen('none_none_none'); // hide all screens
+  // hide all screens manually
+  ['menu','instructions','scores','gameOver','win'].forEach(id => {
+    document.getElementById(id+'Screen').classList.add('hidden');
+  });
+  updateHUD();
+  showWaveAnnounce('WAVE 1', '— BROTHERS, ADVANCE —');
+  gameLoop();
+}
+
+// ── Main game loop
+let lastTime = 0;
+function gameLoop(ts) {
+  if (!G.running) return;
+  G._raf = requestAnimationFrame(gameLoop);
+
+  pollGamepad();
+
+  drawBg();
+
+  // Update & draw
+  updateEnemies();
+  updateBolts();
+  updateEnemyBolts();
+  updateParticles();
+  updatePlayer();
+
+  // Draw enemies
+  for (const e of enemies) {
+    drawDemon(e.x, e.y, e.type, e.phase, e.hp, e.maxHp, e.flashTimer > 0 && Math.floor(e.flashTimer/2)%2===0);
+  }
+
+  // Draw player (with invincibility flicker)
+  const pFlash = player.flashTimer > 0 && Math.floor(player.flashTimer/2)%2===0;
+  const pHidden = player.invincible > 0 && Math.floor(player.invincible/5)%2===0 && player.flashTimer <= 0;
+  if (!pHidden) drawKnight(player.x, player.y, 2, pFlash);
+
+  // Wave cleared?
+  if (enemies.length === 0 && G.running) {
+    G.running = false;
+    setTimeout(() => {
+      G.running = true;
+      nextWave();
+      gameLoop();
+    }, 1800);
+    G.running = false;
+    return;
+  }
+
+  updateHUD();
+}
+
+// ── Button wiring
+document.getElementById('btn-start').addEventListener('click', startGame);
+document.getElementById('btn-instructions').addEventListener('click', () => showScreen('instructions'));
+document.getElementById('btn-scores').addEventListener('click', showScoresScreen);
+document.getElementById('btn-back-instr').addEventListener('click', () => showScreen('menu'));
+document.getElementById('btn-back-scores').addEventListener('click', () => showScreen('menu'));
+document.getElementById('btn-retry').addEventListener('click', startGame);
+document.getElementById('btn-go-menu-over').addEventListener('click', exitToMenu);
+document.getElementById('btn-new-crusade').addEventListener('click', startGame);
+document.getElementById('btn-go-menu-win').addEventListener('click', exitToMenu);
+
+// Keyboard menu navigation
+let menuIdx = 0;
+const menuBtns = ['btn-start','btn-instructions','btn-scores'];
+document.addEventListener('keydown', e => {
+  if (!document.getElementById('menuScreen').classList.contains('hidden')) {
+    if (e.code === 'ArrowDown') { menuIdx = (menuIdx+1)%menuBtns.length; highlightMenu(); }
+    if (e.code === 'ArrowUp') { menuIdx = (menuIdx-1+menuBtns.length)%menuBtns.length; highlightMenu(); }
+    if (e.code === 'Enter') document.getElementById(menuBtns[menuIdx]).click();
+  }
+});
+function highlightMenu() {
+  menuBtns.forEach((id,i) => {
+    document.getElementById(id).classList.toggle('selected', i===menuIdx);
+  });
+}
+
+// Animated bg on menu
+function menuBgLoop() {
+  if (document.getElementById('menuScreen').classList.contains('hidden')) return;
+  if (!bgStarObjs.length) initBg();
+  drawBg();
+  requestAnimationFrame(menuBgLoop);
+}
+
+// Init bg and start menu animation
+initBg();
+menuBgLoop();
+
+// Observe menu visibility
+const observer = new MutationObserver(() => {
+  if (!document.getElementById('menuScreen').classList.contains('hidden')) menuBgLoop();
+});
+observer.observe(document.getElementById('menuScreen'), { attributes: true });
+
+</script>
+</body>
+</html>
