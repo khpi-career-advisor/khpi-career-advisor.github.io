@@ -1,0 +1,1914 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STACK//SMASHER — аркада налагоджувача</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cy:#29f4ff; --mg:#ff4bd8; --yl:#ffe23d; --gr:#3dff7a; --rd:#ff3b5c;
+  --ink:#e8f0ff; --dim:#8a8fbf; --panel:rgba(8,3,24,.92);
+  --pf:"Press Start 2P", ui-monospace, monospace;
+  --mf:"JetBrains Mono", ui-monospace, Consolas, monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:#000}
+body{
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--mf);color:var(--ink);
+  background:radial-gradient(ellipse at 50% 40%,#1a0636 0%,#05010c 60%,#000 100%);
+  user-select:none;-webkit-user-select:none;
+}
+#wrap{position:relative;width:min(100vw,177.78vh);height:min(56.25vw,100vh);overflow:hidden;
+  box-shadow:0 0 60px rgba(255,75,216,.18),0 0 140px rgba(41,244,255,.08)}
+#game{position:absolute;inset:0;width:100%;height:100%;display:block}
+
+/* ---------- CRT ---------- */
+#crt{position:absolute;inset:0;pointer-events:none;z-index:60;
+  background:repeating-linear-gradient(0deg,rgba(0,0,0,.22) 0,rgba(0,0,0,.22) 1px,transparent 1px,transparent 3px);
+  animation:flick 5s infinite steps(1)}
+#crt::after{content:"";position:absolute;inset:0;
+  background:radial-gradient(ellipse at center,transparent 58%,rgba(0,0,0,.6) 100%)}
+#crt::before{content:"";position:absolute;left:0;right:0;height:18%;top:-20%;
+  background:linear-gradient(180deg,transparent,rgba(41,244,255,.05),transparent);
+  animation:roll 7s linear infinite}
+@keyframes roll{to{top:110%}}
+@keyframes flick{0%,100%{opacity:1}47%{opacity:.93}48%{opacity:1}83%{opacity:.96}}
+body.nocrt #crt{display:none}
+
+/* ---------- screens ---------- */
+.screen{position:absolute;inset:0;z-index:30;display:none;flex-direction:column;align-items:center;justify-content:center;
+  background:radial-gradient(ellipse at center,rgba(6,2,20,.35),rgba(3,0,10,.8))}
+.screen.active{display:flex;animation:scrIn .25s ease}
+@keyframes scrIn{from{opacity:0;transform:scale(1.02)}to{opacity:1;transform:none}}
+.hidden{display:none!important}
+
+.title{position:relative;font-family:var(--pf);font-size:3.1em;letter-spacing:.04em;line-height:1.1;
+  color:#fff;text-shadow:0 0 .12em #fff,0 0 .35em var(--mg),0 0 .8em var(--mg);margin-bottom:.35em;white-space:nowrap}
+.title::before,.title::after{content:attr(data-t);position:absolute;inset:0;mix-blend-mode:screen}
+.title::before{color:var(--cy);animation:gl1 2.8s infinite steps(1)}
+.title::after{color:var(--mg);animation:gl2 3.3s infinite steps(1)}
+@keyframes gl1{0%,90%,100%{transform:none;clip-path:none;opacity:.0}91%{opacity:.9;transform:translate(-.06em,.02em);clip-path:inset(20% 0 55% 0)}94%{opacity:.9;transform:translate(.05em,-.02em);clip-path:inset(60% 0 10% 0)}}
+@keyframes gl2{0%,86%,100%{transform:none;opacity:0}87%{opacity:.9;transform:translate(.07em,0);clip-path:inset(40% 0 35% 0)}89%{opacity:.9;transform:translate(-.04em,.03em);clip-path:inset(5% 0 80% 0)}}
+.subtitle{font-family:var(--pf);font-size:.62em;color:var(--dim);letter-spacing:.08em;margin-bottom:2.2em}
+.subtitle b{color:var(--yl);font-weight:400}
+
+.menu{display:flex;flex-direction:column;gap:.55em;min-width:22em}
+.nav{font-family:var(--pf);font-size:.9em;padding:.75em 1.2em;color:#b9bde8;cursor:pointer;position:relative;
+  border:1px solid rgba(41,244,255,.14);background:rgba(10,4,30,.55);border-radius:.3em;transition:background .12s,color .12s,box-shadow .12s}
+.nav.focus{color:#fff;background:linear-gradient(90deg,rgba(255,75,216,.28),rgba(41,244,255,.14));
+  border-color:var(--cy);box-shadow:0 0 .8em rgba(41,244,255,.45),inset 0 0 .8em rgba(255,75,216,.25);text-shadow:0 0 .4em var(--cy)}
+.nav.focus::before{content:"▶";position:absolute;left:-1.4em;top:50%;transform:translateY(-50%);color:var(--yl);animation:blink .6s infinite steps(1)}
+@keyframes blink{50%{opacity:0}}
+.pad-status{margin-top:1.8em;font-size:.72em;color:var(--dim);padding:.45em .9em;border:1px dashed rgba(138,143,191,.4);border-radius:1em}
+.pad-status.on{color:var(--gr);border-color:var(--gr);box-shadow:0 0 .6em rgba(61,255,122,.3)}
+.foot{margin-top:1em;font-family:var(--pf);font-size:.45em;color:#6a6f9f;letter-spacing:.06em}
+.credit{position:absolute;bottom:1.1em;right:1.4em;font-family:var(--pf);font-size:.4em;color:#4d4f7a}
+.ver{position:absolute;bottom:1.1em;left:1.4em;font-family:var(--pf);font-size:.4em;color:#4d4f7a}
+
+.panel{width:48em;max-height:31em;display:flex;flex-direction:column;background:var(--panel);
+  border:1px solid rgba(41,244,255,.45);border-radius:.5em;padding:1.2em 1.4em;
+  box-shadow:0 0 1.4em rgba(41,244,255,.25),0 0 3em rgba(255,75,216,.12),inset 0 0 2em rgba(41,244,255,.05)}
+.panel h2{font-family:var(--pf);font-size:1.05em;color:var(--yl);text-shadow:0 0 .5em rgba(255,226,61,.6);margin-bottom:.8em;letter-spacing:.05em}
+.panel h3{font-family:var(--pf);font-size:.62em;color:var(--cy);margin:1.3em 0 .6em;letter-spacing:.06em}
+.scroll{overflow-y:auto;flex:1;padding-right:.6em;margin-bottom:.9em;font-size:.82em;line-height:1.55}
+.scroll::-webkit-scrollbar{width:.4em}.scroll::-webkit-scrollbar-thumb{background:rgba(41,244,255,.4)}
+.scroll p{margin-bottom:.6em}
+.scroll ul{list-style:none}
+.scroll li{padding:.25em 0 .25em 1.2em;position:relative}
+.scroll li::before{content:"›";position:absolute;left:.2em;color:var(--mg)}
+.scroll b{color:#fff}
+.lead{color:#cfd3ff}
+table.keys{width:100%;border-collapse:collapse;font-size:.95em}
+table.keys td,table.keys th{padding:.35em .5em;border-bottom:1px solid rgba(138,143,191,.18);text-align:left;vertical-align:middle}
+table.keys th{font-family:var(--pf);font-size:.62em;color:var(--dim);font-weight:400}
+kbd{display:inline-block;font-family:var(--pf);font-size:.62em;padding:.35em .5em;margin:.1em;border:1px solid var(--cy);
+  border-bottom-width:3px;border-radius:.3em;color:var(--cy);background:rgba(41,244,255,.07)}
+kbd.p{border-color:var(--mg);color:var(--mg);background:rgba(255,75,216,.07)}
+.btn{align-self:center;min-width:14em;text-align:center}
+.row{display:flex;gap:.8em;justify-content:center;flex-wrap:wrap}
+
+/* dex */
+.dex{display:grid;grid-template-columns:1fr 1fr;gap:.8em}
+.card{border:1px solid rgba(138,143,191,.25);border-radius:.4em;padding:.7em .8em;background:rgba(255,255,255,.02);display:flex;gap:.8em}
+.card img{width:3.6em;height:3.6em;image-rendering:pixelated;flex:none}
+.card .nm{font-family:var(--pf);font-size:.62em;margin-bottom:.45em}
+.card .tx{font-size:.88em;color:#c3c7ee}
+.card .fx{margin-top:.4em;font-size:.85em}
+.chip{display:inline-block;font-family:var(--pf);font-size:.62em;padding:.3em .45em;border:1px solid;border-radius:.25em;margin-right:.3em}
+.ds{grid-column:span 2}
+
+/* scores */
+table.hs{width:100%;border-collapse:collapse;font-family:var(--pf);font-size:.62em}
+table.hs td,table.hs th{padding:.7em .6em;border-bottom:1px solid rgba(138,143,191,.15)}
+table.hs th{color:var(--dim);font-weight:400;text-align:left}
+table.hs td.r{text-align:right}
+table.hs tr.me td{color:var(--yl);text-shadow:0 0 .5em var(--yl);animation:blink 1s infinite steps(1)}
+table.hs tbody tr:first-child td{color:#ffd76a}
+.legend{font-size:.72em;color:var(--dim);margin-top:.6em}
+
+/* settings */
+.set{display:flex;justify-content:space-between;align-items:center;gap:1em}
+.set small{display:block;font-family:var(--mf);font-size:.75em;color:var(--dim);margin-top:.45em;line-height:1.35;max-width:32em}
+.val{font-family:var(--pf);font-size:.85em;padding:.35em .6em;border-radius:.25em;flex:none}
+.val.on{color:#051b0d;background:var(--gr);box-shadow:0 0 .6em rgba(61,255,122,.55)}
+.val.off{color:var(--dim);border:1px solid var(--dim)}
+.setlist{display:flex;flex-direction:column;gap:.5em;margin-bottom:1em}
+
+/* quiz */
+.qhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:.6em}
+.qbar{height:.4em;background:rgba(138,143,191,.2);border-radius:.2em;overflow:hidden;margin-bottom:1em}
+.qbar i{display:block;height:100%;width:100%;background:linear-gradient(90deg,var(--rd),var(--yl),var(--gr))}
+.qq{font-size:1.02em;line-height:1.5;margin-bottom:1em;color:#fff}
+.qopts{display:flex;flex-direction:column;gap:.5em;margin-bottom:.8em}
+.qopt{font-family:var(--mf);font-size:.95em;font-weight:700;padding:.7em 1em}
+.qopt.ok{border-color:var(--gr)!important;color:var(--gr)!important;background:rgba(61,255,122,.12)!important}
+.qopt.bad{border-color:var(--rd)!important;color:var(--rd)!important;background:rgba(255,59,92,.12)!important}
+.qopt.locked{opacity:.75;cursor:default}
+.qfb{min-height:3.2em;font-size:.88em;line-height:1.45;color:#cfd3ff;margin-bottom:.8em}
+.qfb b.g{color:var(--gr)}.qfb b.r{color:var(--rd)}
+
+/* over */
+.bigred{font-family:var(--pf);font-size:1.7em;color:var(--rd);text-shadow:0 0 .4em var(--rd),0 0 1em rgba(255,59,92,.5);margin-bottom:.2em}
+.core{font-family:var(--pf);font-size:.55em;color:var(--dim);margin-bottom:1em}
+pre.trace{font-family:var(--mf);font-size:.8em;line-height:1.55;color:#cfd3ff;background:rgba(0,0,0,.45);border-left:3px solid var(--rd);
+  padding:.8em 1em;margin-bottom:1em;white-space:pre-wrap}
+pre.trace .e{color:var(--rd)}pre.trace .a{color:var(--cy)}
+.namebox{text-align:center;margin-bottom:1em}
+.namebox .nb-t{font-family:var(--pf);font-size:.7em;color:var(--yl);margin-bottom:.8em;animation:blink 1s infinite steps(1)}
+.slots{display:flex;justify-content:center;gap:.6em;margin-bottom:.6em}
+.slot{font-family:var(--pf);font-size:2em;width:1.6em;height:1.8em;display:flex;align-items:center;justify-content:center;
+  border:2px solid rgba(138,143,191,.4);border-radius:.15em;color:#fff;background:rgba(0,0,0,.4)}
+.slot.on{border-color:var(--cy);box-shadow:0 0 .6em var(--cy);color:var(--cy)}
+.slot.on::after{content:"";position:absolute}
+.nb-h{font-size:.72em;color:var(--dim)}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="game"></canvas>
+
+  <!-- ========== MAIN MENU ========== -->
+  <section class="screen" id="scr-menu">
+    <div class="title" data-t="STACK//SMASHER">STACK//SMASHER</div>
+    <div class="subtitle">аркада налагоджувача · <b>LIFO</b> · <b>FIFO</b> · <b>HEAP</b> · <b>GC</b> · <b>O(n)</b></div>
+    <div class="menu">
+      <div class="nav" data-act="play">ГРАТИ</div>
+      <div class="nav" data-act="help">ЯК ГРАТИ</div>
+      <div class="nav" data-act="dex">ДОВІДНИК БАГІВ</div>
+      <div class="nav" data-act="scores">РЕКОРДИ</div>
+      <div class="nav" data-act="settings">НАЛАШТУВАННЯ</div>
+    </div>
+    <div class="pad-status" id="padStatus">геймпад не знайдено · натисни будь-яку кнопку на ньому</div>
+    <div class="foot">W/S · D-PAD — ВИБІР &nbsp;·&nbsp; SPACE · (A) — OK &nbsp;·&nbsp; ESC · (B) — НАЗАД</div>
+    <div class="ver">v1.0 · 8-BIT DEBUGGER</div>
+    <div class="credit">НТУ «ХПІ» · STEM INNOVATION CAMPUS</div>
+  </section>
+
+  <!-- ========== HELP ========== -->
+  <section class="screen" id="scr-help" data-back="menu" data-scroll="1">
+    <div class="panel">
+      <h2>ЯК ГРАТИ</h2>
+      <div class="scroll">
+        <p class="lead">Ти — налагоджувач <b>DEBUG-01</b> усередині пам’яті програми. Баги виходять із черги спавну. Збирай чіпи-фікси, вони лягають у <b>стек</b>, і стріляй правильним фіксом у відповідну помилку.</p>
+        <h3>КЕРУВАННЯ</h3>
+        <table class="keys">
+          <tr><th>ДІЯ</th><th>КЛАВІАТУРА</th><th>ГЕЙМПАД</th></tr>
+          <tr><td>Рух</td><td><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> або стрілки</td><td><kbd class="p">L-STICK</kbd><kbd class="p">D-PAD</kbd></td></tr>
+          <tr><td>Постріл: POP верхнього чіпа, а з порожнім стеком — printf</td><td><kbd>SPACE</kbd></td><td><kbd class="p">A</kbd><kbd class="p">RT</kbd></td></tr>
+          <tr><td>Приціл</td><td colspan="2">автоматичний: чіп летить у найближчий баг свого типу, printf — у найближчий баг</td></tr>
+          <tr><td>SWAP — поміняти два верхні чіпи</td><td><kbd>E</kbd><kbd>SHIFT</kbd></td><td><kbd class="p">X</kbd><kbd class="p">B</kbd><kbd class="p">LB</kbd><kbd class="p">RB</kbd></td></tr>
+          <tr><td>GC — збирач сміття</td><td><kbd>Q</kbd></td><td><kbd class="p">Y</kbd><kbd class="p">LT</kbd></td></tr>
+          <tr><td>Пауза</td><td><kbd>ESC</kbd><kbd>P</kbd></td><td><kbd class="p">START</kbd></td></tr>
+          <tr><td>Меню</td><td><kbd>W</kbd>/<kbd>S</kbd> + <kbd>SPACE</kbd>, <kbd>ESC</kbd> — назад</td><td><kbd class="p">D-PAD</kbd> + <kbd class="p">A</kbd>, <kbd class="p">B</kbd> — назад</td></tr>
+        </table>
+        <p style="margin-top:.6em;color:#8a8fbf">Для гри достатньо WASD + SPACE. SWAP і GC — додаткові прийоми.</p>
+        <h3>ПРАВИЛА</h3>
+        <ul>
+          <li><b>PUSH.</b> Пролети крізь чіп — він ляже на вершину стека. Місткість стека — 6.</li>
+          <li><b>POP.</b> SPACE / (A) вистрілює лише верхній чіп, приціл автоматичний: постріл летить у найближчий баг, який цей чіп виправляє. Хочеш вистрілити A, потім B — збирай спочатку B, потім A.</li>
+          <li><b>Правильний фікс</b> знищує баг з одного влучання і нарощує комбо. Якщо ж на арені немає бага для верхнього чіпа, постріл полетить у найближчий інший — це <b>неправильний фікс</b>, і він викликає <b>fork()</b>: баг клонується. Приціл тоді червоний з позначкою «✗ fork()». Вихід — SWAP або почекати.</li>
+          <li><b>printf.</b> Коли стек порожній, SPACE / (A) стріляє printf: 1 HP за влучання. Можна тримати кнопку — постріл раз на 0,3 с. Повільно, зате без fork().</li>
+          <li><b>STACK OVERFLOW.</b> Сьомий чіп у заповнений стек — вміст стека втрачено. Обминай зайві чіпи.</li>
+          <li><b>HEAP.</b> Витоки пам’яті розкидають сміття, воно сповільнює рух. HEAP 100% — OutOfMemoryError і мінус процес (життя).</li>
+          <li><b>GC.</b> Mark &amp; Sweep прибирає все сміття і на 2 с зупиняє світ (stop-the-world). Заряди дають комбо та Code Review.</li>
+          <li><b>Комбо.</b> Кожні 3 правильні фікси множник зсувається вліво: ×2 = 1&lt;&lt;1, ×4 = 1&lt;&lt;2 … до ×16.</li>
+          <li><b>Хвилі</b> ростуть за класами складності: O(1) → O(log n) → O(n) → O(n log n) → бос O(n²).</li>
+          <li><b>Бос SPAGHETTI.exe</b> — зв’язний список. Вразлива лише голова. Правильний фікс: head = head.next. Помилка: list.append().</li>
+          <li><b>Code Review</b> між хвилями: питання з інформатики. Правильна відповідь — +300 і заряд GC.</li>
+          <li>Кожні 10 000 очок — додатковий процес. Рахунок дублюється в шістнадцятковій системі.</li>
+        </ul>
+      </div>
+      <div class="nav btn" data-act="menu">◀ НАЗАД</div>
+    </div>
+  </section>
+
+  <!-- ========== DEX ========== -->
+  <section class="screen" id="scr-dex" data-back="menu" data-scroll="1">
+    <div class="panel">
+      <h2>ДОВІДНИК БАГІВ І СТРУКТУР</h2>
+      <div class="scroll"><div class="dex" id="dexGrid"></div></div>
+      <div class="nav btn" data-act="menu">◀ НАЗАД</div>
+    </div>
+  </section>
+
+  <!-- ========== SCORES ========== -->
+  <section class="screen" id="scr-scores" data-back="menu">
+    <div class="panel" style="width:40em">
+      <h2>ТАБЛИЦЯ РЕКОРДІВ</h2>
+      <table class="hs"><thead><tr><th>#</th><th>ІМ’Я</th><th style="text-align:right">ОЧКИ</th><th style="text-align:right">HEX</th><th style="text-align:right">ХВИЛЯ</th></tr></thead><tbody id="hsBody"></tbody></table>
+      <div class="legend">ADA — Ада Лавлейс · HOP — Грейс Хоппер · TUR — Алан Тюрінг · KNU — Дональд Кнут · LIN — Лінус Торвальдс</div>
+      <div class="row" style="margin-top:1em">
+        <div class="nav btn" data-act="play">▶ ГРАТИ</div>
+        <div class="nav btn" data-act="menu">◀ МЕНЮ</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== SETTINGS ========== -->
+  <section class="screen" id="scr-settings" data-back="menu">
+    <div class="panel" style="width:42em">
+      <h2>НАЛАШТУВАННЯ</h2>
+      <div class="setlist">
+        <div class="nav set" data-act="toggle:sfx"><div>ЗВУКОВІ ЕФЕКТИ</div><span class="val" data-set="sfx"></span></div>
+        <div class="nav set" data-act="toggle:music"><div>ЧІПТЮН-МУЗИКА</div><span class="val" data-set="music"></span></div>
+        <div class="nav set" data-act="toggle:crt"><div>CRT-ЕФЕКТ<small>Скан-лінії і віньєтка, як на старому моніторі.</small></div><span class="val" data-set="crt"></span></div>
+        <div class="nav set" data-act="toggle:hints"><div>КОЛЬОРОВІ ПІДКАЗКИ<small>Баг світиться кольором свого фіксу. Вимкни — усі баги стануть червоними, і доведеться знати, який фікс до якої помилки. Очки за фікс ×2.</small></div><span class="val" data-set="hints"></span></div>
+        <div class="nav set" data-act="toggle:shake"><div>ТРУСІННЯ ЕКРАНА</div><span class="val" data-set="shake"></span></div>
+      </div>
+      <div class="nav btn" data-act="menu">◀ НАЗАД</div>
+    </div>
+  </section>
+
+  <!-- ========== PAUSE ========== -->
+  <section class="screen" id="scr-pause" data-back="resume">
+    <div class="title" data-t="PAUSE" style="font-size:2.4em">PAUSE</div>
+    <div class="subtitle">процес призупинено · SIGSTOP</div>
+    <div class="menu">
+      <div class="nav" data-act="resume">ПРОДОВЖИТИ</div>
+      <div class="nav" data-act="restart">ПОЧАТИ ЗАНОВО</div>
+      <div class="nav" data-act="menu">ГОЛОВНЕ МЕНЮ</div>
+    </div>
+    <div class="foot" style="margin-top:2em">ПОРАДА: СТЕК — ЦЕ LIFO. ОСТАННІЙ ПІДІБРАНИЙ ЧІП ВИСТРІЛИТЬ ПЕРШИМ.</div>
+  </section>
+
+  <!-- ========== QUIZ ========== -->
+  <section class="screen" id="scr-quiz">
+    <div class="panel" style="width:44em">
+      <div class="qhead"><h2 id="quizTitle" style="margin:0">CODE REVIEW</h2><span id="quizReward" style="font-family:var(--pf);font-size:.55em;color:var(--dim)">+300 · +1 GC</span></div>
+      <div class="qbar"><i id="quizBar"></i></div>
+      <div class="qq" id="quizQ"></div>
+      <div class="qopts" id="quizOpts"></div>
+      <div class="qfb" id="quizFb"></div>
+      <div class="nav btn hidden" id="quizNext" data-act="quiznext">НАСТУПНА ХВИЛЯ ▶</div>
+    </div>
+  </section>
+
+  <!-- ========== GAME OVER ========== -->
+  <section class="screen" id="scr-over" data-back="menu">
+    <div class="panel" style="width:44em;align-items:stretch">
+      <div class="bigred">SEGMENTATION FAULT</div>
+      <div class="core">(core dumped) · процес завершено</div>
+      <pre class="trace" id="trace"></pre>
+      <div class="namebox hidden" id="nameBox">
+        <div class="nb-t">НОВИЙ РЕКОРД! ВВЕДИ ІНІЦІАЛИ</div>
+        <div class="slots"><div class="slot" id="sl0">A</div><div class="slot" id="sl1">A</div><div class="slot" id="sl2">A</div></div>
+        <div class="nb-h">↑↓ — літера · ←→ — позиція · SPACE / (A) — далі · ESC / (B) — пропустити · або просто надрукуй</div>
+      </div>
+      <div class="row" id="overBtns">
+        <div class="nav btn" data-act="restart">▶ ЩЕ РАЗ</div>
+        <div class="nav btn" data-act="scores">★ РЕКОРДИ</div>
+        <div class="nav btn" data-act="menu">◀ МЕНЮ</div>
+      </div>
+    </div>
+  </section>
+
+  <div id="crt"></div>
+</div>
+
+<script>
+'use strict';
+(function(){
+
+/* =====================================================================
+   0. БАЗОВІ КОНСТАНТИ Й УТИЛІТИ
+   ===================================================================== */
+const W = 960, H = 540, TOP = 46;
+const ARENA = { x0: 88, y0: TOP + 8, x1: W - 48, y1: H - 30 };
+const PF = '"Press Start 2P", ui-monospace, monospace';
+const MF = '"JetBrains Mono", ui-monospace, Consolas, monospace';
+const $ = id => document.getElementById(id);
+const cvs = $('game'), ctx = cvs.getContext('2d');
+let K = 1;                       // масштаб логічних пікселів → фізичні
+let STATE = 'ui';                // ui | play | pause | quiz | over
+let G = null;                    // поточна гра
+
+const rnd = (a, b) => a + Math.random() * (b - a);
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const hyp = Math.hypot;
+const pad = (n, l) => String(n).padStart(l, '0');
+function angDiff(a, b) { let d = (b - a) % (Math.PI * 2); if (d > Math.PI) d -= Math.PI * 2; if (d < -Math.PI) d += Math.PI * 2; return d; }
+function rgba(hex, a) { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`; }
+function plural(n, f) {        // 1 баг · 2 баги · 5 багів
+  const a = n % 10, b = n % 100;
+  if (a === 1 && b !== 11) return f[0];
+  if (a >= 2 && a <= 4 && !(b >= 12 && b <= 14)) return f[1];
+  return f[2];
+}
+function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+const Store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* storage недоступне — працюємо в пам'яті */ } }
+};
+const Settings = Object.assign({ sfx: true, music: true, crt: true, hints: true, shake: true }, Store.get('stacksmash.settings', {}));
+
+/* =====================================================================
+   1. ДАНІ: БАГИ, ПІДКАЗКИ, ХВИЛІ, ПИТАННЯ
+   ===================================================================== */
+const TYPES = {
+  NULL: { name: 'NullPointerException', short: 'NULL', color: '#29f4ff', chip: '?.', fix: 'null-check',
+    desc: 'Програма звертається до об’єкта, якого не існує (null).',
+    fixDesc: 'Перевір посилання перед використанням: if (obj != null) або obj?.run().',
+    beh: 'Час від часу зникає і з’являється поруч. Поки його «немає», влучити неможливо.' },
+  LOOP: { name: 'InfiniteLoop', short: 'LOOP', color: '#ffe23d', chip: 'break', fix: 'break',
+    desc: 'Цикл, умова виходу якого ніколи не стає істинною. Програма зависає.',
+    fixDesc: 'Оператор break або коректна умова завершення циклу.',
+    beh: 'Кружляє навколо тебе, щоразу звужуючи коло.' },
+  RACE: { name: 'RaceCondition', short: 'RACE', color: '#ff4bd8', chip: 'mutex', fix: 'mutex',
+    desc: 'Два потоки одночасно змінюють спільні дані. Результат залежить від того, хто встигне першим.',
+    fixDesc: 'М’ютекс (lock) пускає в критичну секцію лише один потік.',
+    beh: 'Жуки-близнюки непередбачувано смикаються і швидко наближаються.' },
+  LEAK: { name: 'MemoryLeak', short: 'LEAK', color: '#3dff7a', chip: 'free()', fix: 'free()',
+    desc: 'Програма виділяє пам’ять і не повертає її. Вільна пам’ять поступово закінчується.',
+    fixDesc: 'Звільняй пам’ять: free() / delete. Постріл free() ще й прибирає сміття на шляху.',
+    beh: 'Повільно росте і розкидає сміття, яке заповнює HEAP.' }
+};
+const TYPE_KEYS = Object.keys(TYPES);
+const MONO = '#ff3b5c';
+const bugCol = t => Settings.hints ? TYPES[t].color : MONO;
+const hintMul = () => Settings.hints ? 1 : 2;
+
+const TIPS = {
+  stack: ['СТЕК (LIFO)', 'Пролети крізь чіп — він ляже на стек. SPACE / (A) виймає ВЕРХНІЙ чіп (POP) і стріляє ним. Приціл автоматичний: чіп сам знаходить баг свого типу.'],
+  printf: ['printf-НАЛАГОДЖЕННЯ', 'Стек порожній, тож SPACE / (A) стріляє printf: 1 HP за влучання. Правильний чіп на вершині стека знищує баг одразу.'],
+  queue: ['ЧЕРГА СПАВНУ (FIFO)', 'Унизу — черга багів. Хто першим став у чергу, той першим вийде на арену.'],
+  fork: ['fork()!', 'Неправильний фікс не лікує баг — він його клонує. Червоний приціл «✗ fork()» попереджає: на вершині стека не той чіп. Зроби SWAP або зачекай на потрібного бага.'],
+  overflow: ['STACK OVERFLOW', 'Стек має обмежений розмір. Сьомий елемент у стек на 6 — переповнення, вміст втрачено.'],
+  underflow: ['STACK UNDERFLOW', 'POP з порожнього стека неможливий. Спочатку PUSH: підбери чіп.'],
+  heap: ['HEAP ЗАПОВНЮЄТЬСЯ', 'Витік пам’яті лишає сміття. HEAP 100% — OutOfMemoryError і мінус процес. GC: Q / (Y).'],
+  gc: ['MARK & SWEEP', 'GC позначає досяжні об’єкти, а недосяжне сміття вимітає. На час прибирання світ зупиняється (stop-the-world).'],
+  combo: ['КОМБО = БІТОВИЙ ЗСУВ', 'Кожні 3 правильні фікси множник зсувається вліво: 1<<1 = ×2, 1<<2 = ×4, до ×16.'],
+  swap: ['SWAP', 'E / (X) міняє місцями два верхні чіпи. Так у стекових мовах (Forth, байт-код JVM) переставляють операнди.'],
+  boss: ['ЗВ’ЯЗНИЙ СПИСОК', 'SPAGHETTI.exe — зв’язний список. Влучити можна лише в голову (head). Правильний фікс: head = head.next. Помилка: list.append().']
+};
+TYPE_KEYS.forEach(k => { const t = TYPES[k]; TIPS[k] = [t.name, `${t.desc} Фікс: чіп «${t.chip}».`]; });
+
+const CLASSES = [
+  { o: 'O(1)', f: n => 4, why: 'Константа: хоч яке n — завжди 4 баги.' },
+  { o: 'O(log n)', f: n => 2 + Math.ceil(Math.log2(n)), why: 'Логарифм росте повільно: подвоєння n додає лише один баг.' },
+  { o: 'O(n)', f: n => n, why: 'Лінійна складність: скільки n, стільки й багів.' },
+  { o: 'O(n log n)', f: n => Math.ceil(n * Math.log2(n) / 2), why: 'Як у швидкого сортування: трохи більше, ніж n.' },
+  { o: 'O(n²)', f: n => n, boss: true, why: 'Вкладені цикли без меж породили спагеті-код.' }
+];
+
+const QUIZ = [
+  { q: 'За яким принципом працює стек?', a: ['LIFO — останнім прийшов, першим вийшов', 'FIFO — першим прийшов, першим вийшов', 'Елементи виходять у випадковому порядку'], e: 'Стек — як стос тарілок: беремо верхню, тобто ту, що поклали останньою.' },
+  { q: 'За яким принципом працює черга (queue)?', a: ['FIFO — першим прийшов, першим вийшов', 'LIFO — останнім прийшов, першим вийшов', 'Спочатку виходять найбільші елементи'], e: 'Як черга в їдальні: хто раніше став, той раніше обслужений.' },
+  { q: 'Коли виникає NullPointerException?', a: ['Коли звертаємось до об’єкта через посилання, що дорівнює null', 'Коли ділимо число на нуль', 'Коли зникає інтернет'], e: 'null означає «посилання нікуди не вказує». Викликати метод у «нічого» неможливо.' },
+  { q: 'Що таке витік пам’яті?', a: ['Програма виділяє пам’ять і не звільняє її', 'Вірус копіює дані з диска', 'Оперативна пам’ять перегрівається'], e: 'Невивільнена пам’ять накопичується, доки її не забракне всій програмі.' },
+  { q: 'Що таке race condition?', a: ['Результат залежить від порядку виконання паралельних потоків', 'Змагання програмістів на швидкість', 'Цикл, що виконується надто швидко'], e: 'Два потоки «змагаються» за спільні дані, і результат стає непередбачуваним.' },
+  { q: 'Для чого потрібен м’ютекс (mutex)?', a: ['Щоб у критичну секцію заходив лише один потік', 'Щоб прискорити виконання циклу', 'Щоб видалити непотрібні змінні'], e: 'Mutex = mutual exclusion, взаємне виключення. Решта потоків чекає своєї черги.' },
+  { q: 'Яка складність бінарного пошуку у відсортованому масиві?', a: ['O(log n)', 'O(n)', 'O(n²)'], e: 'Кожен крок відкидає половину масиву: для мільйона елементів вистачає ~20 кроків.' },
+  { q: 'Яка з функцій росте найшвидше при великих n?', a: ['n²', 'n · log n', 'n'], e: 'Для n = 1000: n² = 1 000 000, n·log n ≈ 10 000, n = 1000.' },
+  { q: 'Скільки буде 0xFF у десятковій системі?', a: ['255', '256', '16'], e: 'F = 15, тож 0xFF = 15·16 + 15 = 255.' },
+  { q: 'Що робить вираз x << 1 для цілого x?', a: ['Множить x на 2', 'Ділить x на 2', 'Додає до x одиницю'], e: 'Зсув усіх бітів на одну позицію вліво подвоює двійкове число.' },
+  { q: 'Скільки різних значень може зберігати 1 байт?', a: ['256', '255', '8'], e: '8 бітів дають 2⁸ = 256 комбінацій: від 0 до 255.' },
+  { q: 'Що робить збирач сміття (garbage collector)?', a: ['Звільняє пам’ять, на яку більше немає посилань', 'Видаляє файли з кошика', 'Очищує кеш браузера'], e: 'Mark & Sweep: позначити все досяжне, а решту звільнити.' },
+  { q: 'Як дістатися 5-го елемента зв’язного списку?', a: ['Пройти по вказівниках next від голови', 'Звернутися за індексом list[4] миттєво', 'Спочатку відсортувати список'], e: 'У зв’язному списку немає прямого доступу за індексом: доступ за O(n).' },
+  { q: 'Що робить системний виклик fork() в Unix?', a: ['Створює копію поточного процесу', 'Завершує процес', 'Розділяє файл на дві частини'], e: 'Після fork() працюють два процеси: батьківський і дочірній.' },
+  { q: 'Хто популяризував слово «баг» після знахідки справжньої молі в комп’ютері Mark II (1947)?', a: ['Команда Грейс Хоппер', 'Алан Тюрінг', 'Ада Лавлейс'], e: 'Міль вклеїли в журнал з підписом «First actual case of bug being found».' },
+  { q: 'Як зупинити нескінченний цикл зсередини?', a: ['Оператором break або правильною умовою виходу', 'Додати ще один вкладений цикл', 'Збільшити частоту процесора'], e: 'Будь-який цикл потребує умови, яка колись стане хибною.' },
+  { q: 'Що станеться, якщо рекурсія не має базового випадку?', a: ['Переповниться стек викликів (stack overflow)', 'Програма стане швидшою', 'Компілятор сам додасть умову виходу'], e: 'Кожен виклик займає місце в стеку викликів, і врешті воно закінчується.' },
+  { q: 'Яка структура даних підходить для кнопки «Скасувати» (Undo)?', a: ['Стек', 'Черга', 'Хеш-таблиця'], e: 'Скасовується остання дія, а це саме LIFO.' }
+];
+
+/* =====================================================================
+   2. ЗВУК (Web Audio API: чіптюн-SFX + секвенсор музики)
+   ===================================================================== */
+const Snd = {
+  ctx: null, sfx: null, mus: null, nb: null, step: 0, nt: 0, boss: false,
+  ensure() {
+    if (!this.ctx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      try { this.ctx = new AC(); } catch (e) { return; }
+      const c = this.ctx;
+      this.master = c.createGain(); this.master.gain.value = .8; this.master.connect(c.destination);
+      this.sfx = c.createGain(); this.sfx.connect(this.master);
+      this.mus = c.createGain(); this.mus.connect(this.master);
+      this.nb = c.createBuffer(1, c.sampleRate, c.sampleRate);
+      const d = this.nb.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      this.apply();
+      this.nt = c.currentTime + .2;
+      setInterval(() => this.sched(), 25);
+    }
+    if (this.ctx.state === 'suspended') this.ctx.resume();
+  },
+  ok() { return this.ctx && this.ctx.state === 'running'; },
+  apply() { if (!this.ctx) return; this.sfx.gain.value = Settings.sfx ? .55 : 0; this.mus.gain.value = Settings.music ? .2 : 0; },
+  tone(f, d, type, v, slide, delay, dest, t0) {
+    if (!this.ok()) return;
+    const c = this.ctx, t = (t0 != null ? t0 : c.currentTime) + (delay || 0);
+    const o = c.createOscillator(), g = c.createGain();
+    o.type = type || 'square';
+    o.frequency.setValueAtTime(f, t);
+    if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(20, slide), t + d);
+    g.gain.setValueAtTime(.0001, t);
+    g.gain.linearRampToValueAtTime(v || .2, t + .005);
+    g.gain.exponentialRampToValueAtTime(.0001, t + d);
+    o.connect(g); g.connect(dest || this.sfx);
+    o.start(t); o.stop(t + d + .03);
+  },
+  noise(d, v, freq, ftype, delay, dest, t0) {
+    if (!this.ok()) return;
+    const c = this.ctx, t = (t0 != null ? t0 : c.currentTime) + (delay || 0);
+    const s = c.createBufferSource(); s.buffer = this.nb;
+    const f = c.createBiquadFilter(); f.type = ftype || 'lowpass'; f.frequency.value = freq || 2000;
+    const g = c.createGain();
+    g.gain.setValueAtTime(v || .2, t);
+    g.gain.exponentialRampToValueAtTime(.0001, t + d);
+    s.connect(f); f.connect(g); g.connect(dest || this.sfx);
+    s.start(t, Math.random() * .4); s.stop(t + d + .02);
+  },
+  sched() {
+    if (!this.ok()) return;
+    const c = this.ctx, spb = 60 / (this.boss ? 150 : 122) / 4;
+    if (this.nt < c.currentTime) this.nt = c.currentTime + .05;
+    while (this.nt < c.currentTime + .15) { this.note(this.step, this.nt, spb); this.nt += spb; this.step = (this.step + 1) % 64; }
+  },
+  note(s, t, spb) {
+    const m = n => 440 * Math.pow(2, (n - 69) / 12);
+    const bar = (s >> 4) & 3, M = this.mus;
+    const roots = this.boss ? [40, 40, 41, 39] : [45, 41, 43, 40];     // Am F G E / Em Em F D#
+    const chords = this.boss ? [[0, 3, 7, 10], [0, 3, 7, 10], [0, 3, 6, 9], [0, 4, 7, 10]] : [[0, 3, 7, 12], [0, 4, 7, 12], [0, 4, 7, 12], [0, 4, 7, 11]];
+    const r = roots[bar], ch = chords[bar];
+    if (s % 2 === 0) this.tone(m(s % 8 === 6 ? r + 12 : r), spb * 1.7, 'square', .12, 0, 0, M, t);
+    this.tone(m(r + 24 + ch[[0, 1, 2, 3, 2, 1, 2, 3][s % 8]]), spb * .9, 'triangle', .07, 0, 0, M, t);
+    if (s % 8 === 0) this.tone(140, .12, 'sine', .35, 40, 0, M, t);
+    if (s % 4 === 2) this.noise(.035, .06, 7000, 'highpass', 0, M, t);
+    if (this.boss && s % 8 === 4) this.noise(.09, .12, 1800, 'bandpass', 0, M, t);
+  },
+  play(n, p) {
+    if (!this.ok()) return;
+    switch (n) {
+      case 'move': this.tone(620, .05, 'square', .1); break;
+      case 'select': this.tone(760, .06, 'square', .13); this.tone(1140, .08, 'square', .11, 0, .05); break;
+      case 'back': this.tone(520, .1, 'square', .11, 260); break;
+      case 'pickup': this.tone(340 + p * 110, .09, 'square', .15, 700 + p * 160); break;
+      case 'pop': this.tone(980, .12, 'square', .15, 260); this.noise(.05, .08, 5000, 'highpass'); break;
+      case 'printf': this.tone(1700, .025, 'square', .03); break;
+      case 'fix': [660, 880, 1320].forEach((f, i) => this.tone(f, .09, 'triangle', .2, 0, i * .05)); this.noise(.15, .12, 3000); break;
+      case 'wrong': this.tone(200, .28, 'sawtooth', .16, 70); this.noise(.2, .1, 900); break;
+      case 'hit': this.noise(.05, .1, 4000, 'highpass'); break;
+      case 'kill': this.noise(.22, .2, 1600); this.tone(240, .18, 'square', .12, 60); break;
+      case 'hurt': this.tone(320, .45, 'sawtooth', .2, 50); this.noise(.35, .25, 1200); break;
+      case 'overflow': [880, 660, 440, 220].forEach((f, i) => this.tone(f, .1, 'square', .16, 0, i * .07)); this.noise(.5, .2, 2500, 'bandpass', .1); break;
+      case 'underflow': this.tone(110, .12, 'square', .14, 80); break;
+      case 'swap': this.tone(500, .05, 'square', .12); this.tone(750, .06, 'square', .12, 0, .05); break;
+      case 'gc': this.noise(.9, .2, 600, 'bandpass'); this.tone(200, .8, 'sine', .2, 1600); break;
+      case 'wave': [523, 659, 784, 1047].forEach((f, i) => this.tone(f, .14, 'square', .13, 0, i * .09)); break;
+      case 'boss': this.tone(55, 1.2, 'sawtooth', .25, 40); this.tone(58, 1.2, 'sawtooth', .2, 41); break;
+      case 'bossdie': this.noise(1.2, .3, 900); [196, 262, 330, 392, 523, 659, 784].forEach((f, i) => this.tone(f, .16, 'square', .13, 0, .2 + i * .08)); break;
+      case 'teleport': this.tone(1300, .14, 'sine', .08, 180); break;
+      case 'drop': this.tone(160, .06, 'triangle', .1, 90); break;
+      case 'spawn': this.tone(300, .2, 'sine', .05, 900); break;
+      case 'oneup': [784, 988, 1175, 1568].forEach((f, i) => this.tone(f, .08, 'square', .13, 0, i * .06)); break;
+      case 'over': [392, 330, 262, 196, 131].forEach((f, i) => this.tone(f, .25, 'square', .16, 0, i * .18)); break;
+      case 'good': this.tone(880, .1, 'triangle', .2); this.tone(1320, .15, 'triangle', .2, 0, .08); break;
+      case 'bad': this.tone(220, .3, 'square', .15, 110); break;
+      case 'clink': this.tone(2400, .04, 'square', .05, 1200); break;
+    }
+  }
+};
+
+/* =====================================================================
+   3. ВВЕДЕННЯ: клавіатура + Gamepad API (стандартна розкладка)
+   ===================================================================== */
+const Input = {
+  padOK: true, keys: new Set(), cur: {}, prev: {}, mx: 0, my: 0, ax: 0, ay: 0, typed: [], dev: 'kb', pad: null,
+  hit: new Set(),                 // клавіші, натиснуті й відпущені між кадрами, теж зараховуються
+  poll() {
+    const k = new Set([...this.keys, ...this.hit]), s = {};
+    this.hit.clear();
+    const nameMode = STATE === 'over' && Over.nameMode;           // у режимі імені літери друкуються, а не керують
+    const L = k.has('ArrowLeft') || (!nameMode && k.has('KeyA'));
+    const R = k.has('ArrowRight') || (!nameMode && k.has('KeyD'));
+    const U = k.has('ArrowUp') || (!nameMode && k.has('KeyW'));
+    const D = k.has('ArrowDown') || (!nameMode && k.has('KeyS'));
+    let mx = (R ? 1 : 0) - (L ? 1 : 0), my = (D ? 1 : 0) - (U ? 1 : 0), ax = 0, ay = 0;
+    s.up = U; s.down = D; s.left = L; s.right = R;
+    s.fire = k.has('Space');
+    s.confirm = k.has('Space') || k.has('Enter') || k.has('NumpadEnter');
+    s.back = k.has('Escape') || k.has('Backspace');
+    s.pause = k.has('Escape') || (!nameMode && k.has('KeyP'));
+    s.swap = k.has('KeyE') || k.has('ShiftLeft') || k.has('ShiftRight');
+    s.gc = k.has('KeyQ');
+    let pad = null;
+    let pads = [];
+    if (this.padOK && navigator.getGamepads) {
+      // в iframe без дозволу "gamepad" (permissions policy) виклик кидає SecurityError —
+      // тоді вимикаємо геймпад і граємо з клавіатури
+      try { pads = navigator.getGamepads() || []; }
+      catch (e) { this.padOK = false; pads = []; console.warn('Gamepad API недоступний:', e.message); }
+    }
+    for (const p of pads) {
+      if (!p || !p.connected) continue;
+      if (!pad) pad = p;
+      const b = i => !!(p.buttons[i] && (p.buttons[i].pressed || p.buttons[i].value > .5));
+      const a = i => p.axes[i] || 0;
+      let lx = a(0), ly = a(1);
+      if (hyp(lx, ly) < .25) { lx = 0; ly = 0; }
+      if (b(14)) lx = -1; if (b(15)) lx = 1; if (b(12)) ly = -1; if (b(13)) ly = 1;
+      let rx = p.mapping === 'standard' ? a(2) : 0, ry = p.mapping === 'standard' ? a(3) : 0;
+      if (hyp(rx, ry) < .45) { rx = 0; ry = 0; }
+      let anyBtn = false; for (let i = 0; i < p.buttons.length; i++) if (b(i)) { anyBtn = true; break; }
+      if (lx || ly || rx || ry || anyBtn) this.dev = 'pad';
+      if (lx || ly) { mx = lx; my = ly; }
+      if (rx || ry) { ax = rx; ay = ry; }
+      s.up = s.up || ly < -.5; s.down = s.down || ly > .5; s.left = s.left || lx < -.5; s.right = s.right || lx > .5;
+      s.fire = s.fire || b(0) || b(7);
+      s.confirm = s.confirm || b(0) || b(9);
+      s.back = s.back || b(1) || b(8);
+      s.pause = s.pause || b(9);
+      s.swap = s.swap || b(2) || b(1) || b(4) || b(5);
+      s.gc = s.gc || b(3) || b(6);
+    }
+    this.pad = pad;
+    const l = hyp(mx, my);
+    if (l > 1) { mx /= l; my /= l; }
+    this.mx = mx; this.my = my; this.ax = ax; this.ay = ay;
+    this.prev = this.cur; this.cur = s;
+  },
+  pressed(n) { return !!this.cur[n] && !this.prev[n]; }
+};
+function mkRepeat() {
+  return { d: 0, t: 0, step(dt, neg, pos) {
+    const d = pos ? 1 : neg ? -1 : 0;
+    if (d !== this.d) { this.d = d; this.t = .32; return d; }
+    if (d) { this.t -= dt; if (this.t <= 0) { this.t = .1; return d; } }
+    return 0;
+  } };
+}
+const NavV = mkRepeat(), NavH = mkRepeat();
+
+addEventListener('keydown', e => {
+  if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Backspace', 'Tab'].includes(e.code)) e.preventDefault();
+  Input.keys.add(e.code); Input.hit.add(e.code); Input.dev = 'kb'; Snd.ensure();
+  if (STATE === 'over' && Over.nameMode) {
+    const m = /^(?:Key([A-Z])|Digit([0-9])|Numpad([0-9]))$/.exec(e.code);   // фізична клавіша, а не символ розкладки
+    if (m) Input.typed.push(m[1] || m[2] || m[3]);
+  }
+});
+addEventListener('keyup', e => Input.keys.delete(e.code));
+addEventListener('blur', () => { Input.keys.clear(); Input.hit.clear(); if (STATE === 'play') pauseGame(); });
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    Input.keys.clear(); Input.hit.clear();
+    if (STATE === 'play') pauseGame();
+    if (Snd.ctx && Snd.ctx.state === 'running') Snd.ctx.suspend();
+  } else if (Snd.ctx && Snd.ctx.state === 'suspended') Snd.ctx.resume();
+});
+addEventListener('pointerdown', () => Snd.ensure());
+addEventListener('gamepadconnected', () => { Input.dev = 'pad'; });
+
+/* =====================================================================
+   4. СПРАЙТИ (піксель-арт → офскрін-канваси з попередньо «запеченим» світінням)
+   ===================================================================== */
+const PX = 3;
+function makeSprite(rows, pal, glowCol, blur) {
+  const h = rows.length, w = Math.max(...rows.map(r => r.length));
+  const t = document.createElement('canvas'); t.width = w * PX; t.height = h * PX;
+  const tg = t.getContext('2d');
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const ch = rows[y][x];
+    if (!ch || ch === '.' || !pal[ch]) continue;
+    tg.fillStyle = pal[ch]; tg.fillRect(x * PX, y * PX, PX, PX);
+  }
+  const p = blur ? blur * 2 : 0;
+  const c = document.createElement('canvas'); c.width = t.width + p * 2; c.height = t.height + p * 2;
+  const g = c.getContext('2d');
+  if (glowCol) { g.shadowColor = glowCol; g.shadowBlur = blur; g.drawImage(t, p, p); g.drawImage(t, p, p); g.shadowBlur = 0; }
+  g.drawImage(t, p, p);
+  return c;
+}
+const ART = {
+  ship: ['......w......', '.....wcw.....', '.....ccc.....', '....ccwcc....', '....cwbwc....', '...ccwbwcc...', '...cwbbbwc...',
+    '..ccbbbbbcc..', '.mcb.bbb.bcm.', 'mmc..b.b..cmm', 'mc.........cm', 'm...........m'],
+  NULL: [
+    ['....xxxx....', '..xxxxxxxx..', '.xxxxxxxxxx.', '.xwwxxxxwwx.', 'xxwkxxxxwkxx', 'xxxxxxxxxxxx', 'xxxxkkkkxxxx', 'xxxkxxxxkxxx', 'xxxxxxxxxxxx', 'xxxxxxxxxxxx', 'xx.xxx.xxx.x', 'x...x...x...'],
+    ['....xxxx....', '..xxxxxxxx..', '.xxxxxxxxxx.', '.xwwxxxxwwx.', 'xxwkxxxxwkxx', 'xxxxxxxxxxxx', 'xxxxkkkkxxxx', 'xxxkxxxxkxxx', 'xxxxxxxxxxxx', 'xxxxxxxxxxxx', 'x.xxx.xxx.xx', '...x...x...x']],
+  LOOP: [
+    ['...xxxxx....', '..xx...xx.x.', '.xx.....xxx.', '.x......xxx.', 'xx..w..w....', 'x...k..k...x', 'x..........x', 'x...x..x..xx', 'xx...xx...x.', '.x.......xx.', '.xx.....xx..', '..xxxxxxx...'],
+    ['...xxxxx....', '..xx...xx.x.', '.xx.....xxx.', '.x......xxx.', 'xx..w..w....', 'x...k..k...x', 'x..........x', 'x...xxxx..xx', 'xx........x.', '.x.......xx.', '.xx.....xx..', '..xxxxxxx...']],
+  RACE: [
+    ['.x........x.', '..x......x..', '...xxxxxx...', '..xwxxxxwx..', '..xkxxxxkx..', 'x.xxxxxxxx.x', '.xxxxkkxxxx.', '..xxxkkxxx..', 'x.xxxxxxxx.x', '.x.xxxxxx.x.', '....x..x....'],
+    ['x..........x', '.x........x.', '...xxxxxx...', '..xwxxxxwx..', '..xkxxxxkx..', '.xxxxxxxxxx.', 'x.xxxkkxxx.x', '..xxxkkxxx..', '.xxxxxxxxxx.', 'x..xxxxxx..x', '...x....x...']],
+  LEAK: [
+    ['.....xx.....', '....xxxx....', '...xxxxxx...', '..xxxxxxxx..', '.xxwwxxwwxx.', '.xxwkxxwkxx.', 'xxxxxxxxxxxx', 'xxxxxxxxxxxx', 'xxxxkkkkxxxx', 'xxxxxxxxxxxx', '.xxxxxxxxxx.', '..xxxxxxxx..'],
+    ['............', '.....xx.....', '...xxxxxx...', '..xxxxxxxx..', '.xxwwxxwwxx.', '.xxwkxxwkxx.', 'xxxxxxxxxxxx', 'xxxxxxxxxxxx', 'xxxxkkkkxxxx', 'xxxxxxxxxxxx', 'xxxxxxxxxxxx', '.xxxxxxxxxx.']],
+  garbage: ['ggggggg', 'g.g.g.g', 'ggggggg', 'g.ggg.g', 'ggggggg'],
+  heart: ['.rr.rr.', 'rrrrrrr', 'rrrrrrr', '.rrrrr.', '..rrr..', '...r...']
+};
+const SPR = {};
+function buildSprites() {
+  SPR.ship = makeSprite(ART.ship, { w: '#ffffff', c: '#8fd8ff', b: '#3a6bff', m: '#ff9a3d' }, '#29f4ff', 8);
+  for (const t of TYPE_KEYS) {
+    SPR[t + 'H'] = ART[t].map(r => makeSprite(r, { x: TYPES[t].color, w: '#ffffff', k: '#140024' }, TYPES[t].color, 9));
+    SPR[t + 'M'] = ART[t].map(r => makeSprite(r, { x: MONO, w: '#ffffff', k: '#140024' }, MONO, 9));
+    SPR[t + 'W'] = ART[t].map(r => makeSprite(r, { x: '#ffffff', w: '#ffffff', k: '#ffffff' }, '#ffffff', 9));
+  }
+  SPR.garbage = makeSprite(ART.garbage, { g: '#9a7bff' }, '#6b4bff', 6);
+  SPR.heart = makeSprite(ART.heart, { r: '#ff3b5c' }, '#ff3b5c', 6);
+  SPR.heartOff = makeSprite(ART.heart, { r: '#3a2a4a' }, null, 0);
+}
+const bugSpr = (t, f) => SPR[t + (Settings.hints ? 'H' : 'M')][f];
+
+const GLOWS = {};
+function glowTex(col) {
+  if (GLOWS[col]) return GLOWS[col];
+  const c = document.createElement('canvas'); c.width = c.height = 64;
+  const g = c.getContext('2d'), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  gr.addColorStop(0, rgba(col, .9)); gr.addColorStop(.35, rgba(col, .3)); gr.addColorStop(1, rgba(col, 0));
+  g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
+  return (GLOWS[col] = c);
+}
+
+/* ---------- примітиви малювання ---------- */
+function drawSpr(c, x, y, sc, rot, al) {
+  ctx.save(); ctx.translate(x, y);
+  if (rot) ctx.rotate(rot);
+  if (sc && sc !== 1) ctx.scale(sc, sc);
+  if (al != null) ctx.globalAlpha *= al;
+  ctx.drawImage(c, -c.width / 2, -c.height / 2);
+  ctx.restore();
+}
+function glow(x, y, r, col, a) {
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha *= (a == null ? .6 : a);
+  ctx.imageSmoothingEnabled = true; ctx.drawImage(glowTex(col), x - r, y - r, r * 2, r * 2); ctx.restore();
+}
+function txt(s, x, y, col, size, align, font, gl) {
+  ctx.font = `${size}px ${font || PF}`; ctx.textAlign = align || 'left'; ctx.textBaseline = 'middle';
+  if (gl) { ctx.shadowColor = col; ctx.shadowBlur = gl * K; }
+  ctx.fillStyle = col; ctx.fillText(s, x, y);
+  if (gl) ctx.shadowBlur = 0;
+}
+function neon(s, x, y, size, col) {           // хроматична аберація для великих написів
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  const o = 2 + Math.sin(performance.now() / 90) * 1.2;
+  txt(s, x - o, y, 'rgba(41,244,255,.7)', size, 'center');
+  txt(s, x + o, y, 'rgba(255,75,216,.7)', size, 'center');
+  ctx.restore();
+  txt(s, x, y, col, size, 'center', PF, 14);
+}
+function rr(x, y, w, h, r) {
+  ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+}
+function wrapLines(s, maxW, font) {
+  ctx.font = font; const words = s.split(' '), out = []; let line = '';
+  for (const w of words) { const t = line ? line + ' ' + w : w; if (ctx.measureText(t).width > maxW && line) { out.push(line); line = w; } else line = t; }
+  if (line) out.push(line); return out;
+}
+
+/* =====================================================================
+   5. ФОН: синтвейв-сонце, «серверне місто» з LED, перспективна сітка, hex-дощ
+   ===================================================================== */
+const HOR = 300;
+const BG = {
+  t: 0, stars: [], rain: [], leds: [], sky: null,
+  init() {
+    for (let i = 0; i < 110; i++) this.stars.push({ x: rnd(0, W), y: rnd(0, HOR - 40), s: rnd(.3, 1), ch: Math.random() < .5 ? '0' : '1', tw: rnd(0, 6) });
+    for (let i = 0; i < 24; i++) this.rain.push({ x: 20 + i * 40 + rnd(-8, 8), y: rnd(-200, HOR), sp: rnd(18, 50), s: Array.from({ length: 8 }, () => '0123456789ABCDEF'[Math.floor(Math.random() * 16)]) });
+    this.render();
+  },
+  render() {
+    const S = 2, c = document.createElement('canvas'); c.width = W * S; c.height = H * S;
+    const g = c.getContext('2d'); g.scale(S, S);
+    let gr = g.createLinearGradient(0, 0, 0, HOR);
+    gr.addColorStop(0, '#04010d'); gr.addColorStop(.55, '#140430'); gr.addColorStop(1, '#3b0b5c');
+    g.fillStyle = gr; g.fillRect(0, 0, W, HOR);
+    // сонце зі смугами
+    const sc = document.createElement('canvas'); sc.width = 300 * S; sc.height = 300 * S;
+    const sg = sc.getContext('2d'); sg.scale(S, S);
+    gr = sg.createLinearGradient(0, 30, 0, 270); gr.addColorStop(0, '#ffe23d'); gr.addColorStop(.55, '#ff7a3d'); gr.addColorStop(1, '#ff2b9a');
+    sg.fillStyle = gr; sg.beginPath(); sg.arc(150, 150, 118, 0, Math.PI * 2); sg.fill();
+    sg.globalCompositeOperation = 'destination-out';
+    for (let i = 0; i < 9; i++) { const y = 150 + i * 13, h = 2 + i * 1.3; sg.fillRect(0, y, 300, h); }
+    const hg = g.createRadialGradient(W / 2, HOR - 30, 40, W / 2, HOR - 30, 260);
+    hg.addColorStop(0, 'rgba(255,75,216,.45)'); hg.addColorStop(1, 'rgba(255,75,216,0)');
+    g.fillStyle = hg; g.fillRect(0, 0, W, HOR);
+    g.drawImage(sc, W / 2 - 150, HOR - 170, 300, 300);
+    // серверні стійки-силуети
+    g.fillStyle = '#0a0318';
+    let x = -10;
+    while (x < W + 10) {
+      const w = rnd(26, 60), h = rnd(22, 78);
+      g.fillRect(x, HOR - h, w, h);
+      g.fillStyle = 'rgba(255,75,216,.55)'; g.fillRect(x, HOR - h, w, 1); g.fillStyle = '#0a0318';
+      for (let ly = HOR - h + 6; ly < HOR - 4; ly += 7) for (let lx = x + 4; lx < x + w - 4; lx += 9)
+        if (Math.random() < .35) this.leds.push({ x: lx, y: ly, c: pick(['#29f4ff', '#3dff7a', '#ffe23d', '#ff4bd8']), ph: rnd(0, 6), sp: rnd(1, 4) });
+      x += w + rnd(0, 6);
+    }
+    g.fillStyle = '#05010c'; g.fillRect(0, HOR, W, H - HOR);
+    this.sky = c;
+  },
+  update(dt) {
+    this.t += dt;
+    for (const r of this.rain) { r.y += r.sp * dt; if (r.y > HOR + 40) { r.y = rnd(-160, -20); } }
+  },
+  draw() {
+    ctx.drawImage(this.sky, 0, 0, W, H);
+    // зорі-біти
+    ctx.font = `8px ${MF}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    for (const s of this.stars) { ctx.fillStyle = `rgba(200,210,255,${(.25 + .25 * Math.sin(this.t * 2 + s.tw)) * s.s})`; ctx.fillText(s.ch, s.x, s.y); }
+    // hex-дощ
+    ctx.font = `10px ${MF}`;
+    for (const r of this.rain) for (let i = 0; i < r.s.length; i++) {
+      const y = r.y - i * 12; if (y < 0 || y > HOR - 20) continue;
+      ctx.fillStyle = i === 0 ? 'rgba(180,255,255,.35)' : `rgba(41,244,255,${.16 - i * .018})`;
+      ctx.fillText(r.s[(i + Math.floor(this.t * 3)) % r.s.length], r.x, y);
+    }
+    // LED на стійках
+    for (const l of this.leds) if (Math.sin(this.t * l.sp + l.ph) > .1) { ctx.fillStyle = l.c; ctx.fillRect(l.x, l.y, 2, 2); }
+    // перспективна сітка підлоги
+    ctx.lineWidth = 1;
+    const vx = W / 2;
+    for (let j = -16; j <= 16; j++) {
+      ctx.strokeStyle = `rgba(255,75,216,${.35 - Math.abs(j) * .012})`;
+      ctx.beginPath(); ctx.moveTo(vx + j * 10, HOR); ctx.lineTo(vx + j * 140, H); ctx.stroke();
+    }
+    const N = 12, fr = (this.t * .45) % 1;
+    for (let i = 0; i < N; i++) {
+      const p = (i + fr) / N, y = HOR + (H - HOR) * p * p;
+      ctx.strokeStyle = `rgba(255,75,216,${.08 + p * .45})`;
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+    }
+    const hz = ctx.createLinearGradient(0, HOR - 6, 0, HOR + 6);
+    hz.addColorStop(0, 'rgba(255,75,216,0)'); hz.addColorStop(.5, 'rgba(255,160,230,.8)'); hz.addColorStop(1, 'rgba(255,75,216,0)');
+    ctx.fillStyle = hz; ctx.fillRect(0, HOR - 6, W, 12);
+  }
+};
+
+/* ---------- декоративні баги у меню ---------- */
+const Attract = {
+  items: [],
+  init() {
+    for (let i = 0; i < 9; i++) this.items.push({ t: pick(TYPE_KEYS), x: rnd(40, W - 40), y: rnd(60, H - 40), vx: rnd(-30, 30), vy: rnd(-22, 22), a: rnd(0, 6) });
+  },
+  update(dt) {
+    for (const o of this.items) {
+      o.x += o.vx * dt; o.y += o.vy * dt; o.a += dt;
+      if (o.x < 30 || o.x > W - 30) o.vx *= -1;
+      if (o.y < 30 || o.y > H - 30) o.vy *= -1;
+    }
+  },
+  draw() {
+    for (const o of this.items) {
+      glow(o.x, o.y, 36, TYPES[o.t].color, .25);
+      drawSpr(SPR[o.t + 'H'][Math.floor(o.a * 4) % 2], o.x, o.y, 1, o.t === 'LOOP' ? o.a * 3 : 0, .45);
+    }
+  }
+};
+
+/* =====================================================================
+   6. UI-ЕКРАНИ (стандарт: hideAllScreens() окремо від showScreen(id) з null-guard)
+   ===================================================================== */
+const UI = { cur: null, idx: 0, items: [], lock: 0 };
+function hideAllScreens() {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  UI.cur = null; UI.items = [];
+}
+function showScreen(id, focusIdx) {
+  if (!id) return;
+  const el = $(id);
+  if (!el) return;
+  hideAllScreens();
+  el.classList.add('active');
+  UI.cur = el; UI.lock = .35;               // короткий захист від випадкового натискання
+  refreshNav(focusIdx || 0);
+}
+function refreshNav(i) {
+  if (!UI.cur) return;
+  UI.items = [...UI.cur.querySelectorAll('.nav')].filter(e => e.offsetParent !== null);
+  focusNav(i);
+}
+function focusNav(i) {
+  if (!UI.items.length) return;
+  UI.idx = (i + UI.items.length) % UI.items.length;
+  UI.items.forEach((e, j) => e.classList.toggle('focus', j === UI.idx));
+}
+function uiUpdate(dt) {
+  if (!UI.cur) return;
+  if (UI.lock > 0) { UI.lock -= dt; NavV.step(dt, Input.cur.up, Input.cur.down); NavH.step(dt, Input.cur.left, Input.cur.right); return; }
+  if (STATE === 'over' && Over.nameMode) { nameUpdate(dt); return; }
+  const sc = UI.cur.querySelector('.scroll');
+  const v = NavV.step(dt, Input.cur.up, Input.cur.down);
+  if (v) {
+    if (sc && UI.cur.dataset.scroll === '1') sc.scrollTop += v * 70;
+    else { focusNav(UI.idx + v); Snd.play('move'); }
+  }
+  if (sc && Math.abs(Input.ay) > .3) sc.scrollTop += Input.ay * 700 * dt;
+  const h = NavH.step(dt, Input.cur.left, Input.cur.right);
+  const it = UI.items[UI.idx];
+  if (h && it) {
+    if (it.dataset.act.startsWith('toggle:')) doAct(it.dataset.act);
+    else if (it.parentElement.classList.contains('row')) { focusNav(UI.idx + h); Snd.play('move'); }
+  }
+  if (Input.pressed('confirm') && it) { Snd.play('select'); doAct(it.dataset.act); return; }
+  if (Input.pressed('back') && UI.cur && UI.cur.dataset.back) { Snd.play('back'); doAct(UI.cur.dataset.back); }
+}
+function doAct(act) {
+  if (!act) return;
+  if (act.startsWith('toggle:')) {
+    const k = act.slice(7); Settings[k] = !Settings[k];
+    Store.set('stacksmash.settings', Settings); applySettings(); renderSettings(); Snd.play('move'); return;
+  }
+  if (act.startsWith('quiz:')) { answerQuiz(+act.slice(5)); return; }
+  if (UI.cur && UI.cur.id === 'scr-menu') UI.menuIdx = UI.idx;   // повертаємось на той самий пункт меню
+  switch (act) {
+    case 'play': case 'restart': startGame(); break;
+    case 'help': showScreen('scr-help'); break;
+    case 'dex': showScreen('scr-dex'); break;
+    case 'scores': if (STATE === 'over') { G = null; STATE = 'ui'; Snd.boss = false; } renderScores(-1); showScreen('scr-scores'); break;
+    case 'settings': renderSettings(); showScreen('scr-settings'); break;
+    case 'menu': goMenu(); break;
+    case 'resume': hideAllScreens(); STATE = 'play'; if (G) G.fireArmed = false; break;
+    case 'quiznext': endQuiz(); break;
+  }
+}
+// мишка теж працює
+document.addEventListener('mousemove', e => {
+  const n = e.target.closest && e.target.closest('.nav');
+  if (n && UI.items.includes(n)) { const i = UI.items.indexOf(n); if (i !== UI.idx) focusNav(i); }
+});
+document.addEventListener('click', e => {
+  const n = e.target.closest && e.target.closest('.nav');
+  if (n && UI.items.includes(n)) { Snd.ensure(); Snd.play('select'); doAct(n.dataset.act); }
+});
+
+function applySettings() {
+  document.body.classList.toggle('nocrt', !Settings.crt);
+  Snd.apply();
+}
+function renderSettings() {
+  document.querySelectorAll('[data-set]').forEach(s => {
+    const on = !!Settings[s.dataset.set];
+    s.textContent = on ? 'ON' : 'OFF'; s.className = 'val ' + (on ? 'on' : 'off');
+  });
+}
+function goMenu() {
+  G = null; STATE = 'ui'; Snd.boss = false;
+  showScreen('scr-menu', UI.menuIdx || 0);
+}
+function pauseGame() {
+  if (STATE !== 'play' || !G || G.phase === 'dead') return;
+  STATE = 'pause'; showScreen('scr-pause');
+}
+let padShown = null;
+function updatePadStatus() {
+  const id = Input.padOK ? (Input.pad ? Input.pad.id : '') : '!blocked';
+  if (id === padShown) return;
+  padShown = id;
+  const el = $('padStatus'); if (!el) return;
+  if (!Input.padOK) { el.textContent = 'геймпад заблоковано політикою сторінки · відкрий файл напряму в браузері'; el.classList.remove('on'); return; }
+  if (id) { el.textContent = 'ГЕЙМПАД ПІДКЛЮЧЕНО · ' + id.replace(/\(.*?\)/g, '').trim().slice(0, 38); el.classList.add('on'); }
+  else { el.textContent = 'геймпад не знайдено · натисни будь-яку кнопку на ньому'; el.classList.remove('on'); }
+}
+
+/* ---------- довідник ---------- */
+function buildDex() {
+  const grid = $('dexGrid'); if (!grid) return;
+  let html = '';
+  for (const k of TYPE_KEYS) {
+    const t = TYPES[k], img = SPR[k + 'H'][0].toDataURL();
+    html += `<div class="card"><img src="${img}" alt=""><div><div class="nm" style="color:${t.color}">${t.name}</div>
+      <div class="tx">${t.desc}</div><div class="tx" style="margin-top:.3em;color:#8a8fbf">${t.beh}</div>
+      <div class="fx"><span class="chip" style="color:${t.color};border-color:${t.color}">${t.chip}</span>${t.fixDesc}</div></div></div>`;
+  }
+  const ds = [
+    ['#29f4ff', 'СТЕК (LIFO)', 'Твій набій-магазин. PUSH — підібрати чіп, POP — вистрілити верхнім, SWAP — переставити два верхні. Місткість 6: сьомий чіп спричинить stack overflow.'],
+    ['#ffe23d', 'ЧЕРГА (FIFO)', 'Смуга внизу екрана. Баги виходять на арену в тому порядку, в якому стали в чергу.'],
+    ['#3dff7a', 'HEAP І GC', 'Сміття від витоків займає купу (heap). Збирач сміття Mark & Sweep звільняє її і на час роботи зупиняє світ.'],
+    ['#ff4bd8', 'ЗВ’ЯЗНИЙ СПИСОК', 'Бос SPAGHETTI.exe: вузли з’єднані вказівниками next. Доступна лише голова: після фіксу head = head.next.'],
+    ['#ff9a3d', 'O-ВЕЛИКЕ', 'Кількість багів у хвилі рахується за класом складності: O(1), O(log n), O(n), O(n log n). П’ята хвиля кожного циклу — бос O(n²).'],
+    ['#8fd8ff', 'БІТИ Й HEX', 'Множник комбо — бітовий зсув 1<<k. Рахунок показано і в шістнадцятковій системі: 255 = 0xFF.']
+  ];
+  html += `<div class="ds"><h3>СТРУКТУРИ ТА ПОНЯТТЯ В ГРІ</h3></div>`;
+  for (const d of ds) html += `<div class="card"><div><div class="nm" style="color:${d[0]}">${d[1]}</div><div class="tx">${d[2]}</div></div></div>`;
+  grid.innerHTML = html;
+}
+
+/* ---------- рекорди ---------- */
+const SEED = [{ n: 'ADA', s: 6000, w: 6 }, { n: 'HOP', s: 4500, w: 5 }, { n: 'TUR', s: 3000, w: 4 }, { n: 'KNU', s: 2000, w: 3 }, { n: 'LIN', s: 1000, w: 2 }];
+function getScores() {
+  const s = Store.get('stacksmash.scores', null);
+  if (!Array.isArray(s)) return SEED.slice();
+  return s.filter(r => r && typeof r.n === 'string' && Number.isFinite(r.s) && Number.isFinite(r.w))
+          .map(r => ({ n: r.n.replace(/[^A-Z0-9]/g, '').slice(0, 3) || '???', s: Math.max(0, Math.floor(r.s)), w: Math.max(1, Math.floor(r.w)) }))
+          .sort((a, b) => b.s - a.s).slice(0, 10);
+}
+function qualifies(sc) { const L = getScores(); return sc > 0 && (L.length < 10 || sc > L[L.length - 1].s); }
+function renderScores(hi) {
+  const body = $('hsBody'); if (!body) return;
+  const L = getScores();
+  body.innerHTML = L.map((r, i) => `<tr class="${i === hi ? 'me' : ''}"><td>${pad(i + 1, 2)}</td><td>${r.n}</td><td class="r">${r.s}</td><td class="r">0x${r.s.toString(16).toUpperCase()}</td><td class="r">${r.w}</td></tr>`).join('')
+    || '<tr><td colspan="5">порожньо</td></tr>';
+}
+
+/* =====================================================================
+   7. ГРА: стан, хвилі, гравець, баги, бос, стек, heap, GC
+   ===================================================================== */
+function newGame() {
+  G = {
+    t: 0, score: 0, lives: 3, wave: 0, combo: 0, mult: 1, gcCharges: 1, stack: [], stackCap: 6, stackFx: 0, nextLife: 10000,
+    player: { x: (ARENA.x0 + ARENA.x1) / 2, y: (ARENA.y0 + ARENA.y1) / 2 + 60, vx: 0, vy: 0, ang: -Math.PI / 2, r: 10, inv: 2 },
+    bugs: [], chips: [], shots: [], garbage: [], parts: [], pops: [], portals: [], boss: null, bossPending: 0,
+    queue: [], spawnT: 0, chipT: .6, fireCD: 0, fireArmed: false,
+    phase: 'intro', phaseT: 0, waveInfo: null, clearBonus: 0,
+    shake: 0, glitch: 0, freeze: 0, gcPhase: null, gcT: 0, sweepX: 0,
+    seen: new Set(), toasts: [], toast: null, qbag: shuffle(QUIZ.map((_, i) => i)),
+    stats: { fixes: 0, forks: 0, shots: 0, overflows: 0, gcs: 0, qok: 0, qall: 0, cause: '' }
+  };
+  startWave(1);
+  tip('stack');
+}
+function startGame() {
+  newGame(); hideAllScreens(); STATE = 'play'; Snd.ensure();
+}
+function startWave(w) {
+  const g = G; g.wave = w;
+  const cyc = Math.floor((w - 1) / 5), pos = (w - 1) % 5, n = 6 + 2 * cyc, C = CLASSES[pos];
+  const pool = w === 1 ? ['NULL', 'LOOP'] : w === 2 ? ['NULL', 'LOOP', 'RACE'] : TYPE_KEYS.slice();
+  const count = Math.min(18, C.boss ? 2 + cyc : C.f(n));
+  g.queue = []; for (let i = 0; i < count; i++) g.queue.push(pick(pool));
+  if (w === 2) g.queue[0] = 'RACE';
+  if (w === 3) g.queue[0] = 'LEAK';
+  g.waveInfo = { o: C.o, n, count, why: C.why, boss: !!C.boss, pool, cyc };
+  g.bossPending = C.boss ? 5 + 2 * cyc : 0;
+  g.phase = 'intro'; g.phaseT = 2.8; g.spawnT = .3; g.fireArmed = false;
+  Snd.boss = !!C.boss;
+  Snd.play(C.boss ? 'boss' : 'wave');
+}
+function tip(key) {
+  if (!G || G.seen.has(key) || !TIPS[key]) return;
+  G.seen.add(key); G.toasts.push({ title: TIPS[key][0], body: TIPS[key][1], t: 5.5, dur: 5.5, lines: null });
+}
+function pop(x, y, text, col, big) { G.pops.push({ x, y, text, col, t: 0, dur: big ? 1.9 : 1.05, big: !!big }); }
+function burst(x, y, col, n, sp) {
+  for (let i = 0; i < n; i++) {
+    const a = rnd(0, Math.PI * 2), s = rnd(.2, 1) * (sp || 180);
+    G.parts.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: rnd(.35, .8), max: .8, col, s: rnd(2, 4) });
+  }
+}
+function addScore(v) {
+  G.score += v;
+  if (G.score >= G.nextLife) {
+    G.nextLife += 10000;
+    if (G.lives < 5) { G.lives++; pop(G.player.x, G.player.y - 30, '1UP · НОВИЙ ПРОЦЕС', '#3dff7a', true); Snd.play('oneup'); }
+  }
+}
+function comboUp() {
+  const g = G; g.combo++;
+  const m = 1 << Math.min(4, Math.floor(g.combo / 3));
+  if (m > g.mult) { g.mult = m; pop(g.player.x, g.player.y - 44, `×${m} = 1<<${Math.log2(m)}`, '#ffe23d', true); tip('combo'); }
+  if (g.combo % 8 === 0 && g.gcCharges < 3) { g.gcCharges++; pop(g.player.x, g.player.y + 30, '+1 GC', '#3dff7a'); }
+}
+function comboBreak() { G.combo = 0; G.mult = 1; }
+
+/* ---------- цілі й спавн ---------- */
+function targetList() {
+  const L = [];
+  for (const b of G.bugs) if (!b.tp && !b.dead) L.push(b);
+  if (G.boss && G.boss.nodes.length) L.push(G.boss.nodes[0]);
+  return L;
+}
+// АВТОПРИЦІЛ: чіп летить у найближчий баг СВОГО типу (правильний фікс);
+// якщо такого на арені немає — у найближчий будь-який (тоді буде fork()). printf — у найближчий.
+function isHead(t) { return !!(G.boss && G.boss.nodes.length && G.boss.nodes[0] === t); }
+function targetAlive(t) { return !!t && (isHead(t) || (!t.dead && !t.tp && G.bugs.includes(t))); }
+function aimTarget(x, y, type) {
+  const L = targetList();
+  if (!L.length) return null;
+  const pool = type && type !== 'PRINTF' && L.some(t => t.type === type) ? L.filter(t => t.type === type) : L;
+  let best = null, bd = Infinity;
+  for (const t of pool) { const d = (t.x - x) ** 2 + (t.y - y) ** 2; if (d < bd) { bd = d; best = t; } }
+  return best;
+}
+function nearestTarget(x, y, maxD) {
+  let best = null, bd = maxD * maxD;
+  for (const t of targetList()) { const d = (t.x - x) ** 2 + (t.y - y) ** 2; if (d < bd) { bd = d; best = t; } }
+  return best;
+}
+function spawnPoint() {
+  const P = G.player; let x = 0, y = 0;
+  for (let i = 0; i < 14; i++) {
+    const side = Math.floor(Math.random() * 4);
+    x = side < 2 ? rnd(ARENA.x0 + 40, ARENA.x1 - 40) : (side === 2 ? ARENA.x0 + 34 : ARENA.x1 - 34);
+    y = side >= 2 ? rnd(ARENA.y0 + 40, ARENA.y1 - 40) : (side === 0 ? ARENA.y0 + 34 : ARENA.y1 - 34);
+    if (hyp(x - P.x, y - P.y) > 240) return { x, y };
+  }
+  // запасний варіант: найвіддаленіший від гравця кут арени
+  const corners = [[ARENA.x0 + 40, ARENA.y0 + 40], [ARENA.x1 - 40, ARENA.y0 + 40], [ARENA.x0 + 40, ARENA.y1 - 40], [ARENA.x1 - 40, ARENA.y1 - 40]];
+  corners.sort((a, b) => hyp(b[0] - P.x, b[1] - P.y) - hyp(a[0] - P.x, a[1] - P.y));
+  return { x: corners[0][0], y: corners[0][1] };
+}
+function openPortal(x, y, type) { G.portals.push({ x, y, type, t: 0, dur: type === 'BOSS' ? 1.5 : .8 }); Snd.play('spawn'); }
+function makeBug(type, x, y) {
+  const P = G.player, d = Math.min(1.5, .8 + .04 * (G.wave - 1));
+  const b = { type, x, y, vx: 0, vy: 0, hp: type === 'LEAK' ? 4 : 3, max: type === 'LEAK' ? 4 : 3, r: type === 'RACE' ? 16 : 13,
+    t: rnd(0, 10), flash: 0, scale: 1, d, tp: null, tpT: rnd(3.5, 6), tpT2: 0, jt: 0, jit: 0, dropT: 3, dead: false, grace: .6 };
+  if (type === 'LOOP') { b.oa = Math.atan2(y - P.y, x - P.x); b.or = Math.min(260, hyp(x - P.x, y - P.y)); }
+  return b;
+}
+function spawner(dt) {
+  const g = G; g.spawnT -= dt;
+  const cap = 4 + Math.min(4, g.waveInfo.cyc * 2);           // не більше cap багів одночасно
+  if (g.spawnT <= 0 && g.queue.length && g.bugs.length + g.portals.length < cap) {
+    const type = g.queue.shift(), p = spawnPoint();          // dequeue: FIFO
+    openPortal(p.x, p.y, type);
+    g.spawnT = Math.max(1.2, 2.2 - .2 * g.waveInfo.cyc);
+  }
+}
+function waveDone() {
+  const g = G;
+  return !g.queue.length && !g.portals.length && !g.bugs.length && !g.boss && !g.bossPending;
+}
+
+/* ---------- чіпи ---------- */
+function spawnChip() {
+  const g = G, need = [];
+  for (const b of g.bugs) need.push(b.type);
+  for (const t of g.queue.slice(0, 3)) need.push(t);
+  if (g.boss) for (const n of g.boss.nodes.slice(0, 4)) need.push(n.type, n.type);
+  const type = need.length && Math.random() < .75 ? pick(need) : pick(g.waveInfo.pool);
+  let x = 0, y = 0;
+  for (let i = 0; i < 12; i++) {
+    x = rnd(ARENA.x0 + 40, ARENA.x1 - 40); y = rnd(ARENA.y0 + 40, ARENA.y1 - 40);
+    if (hyp(x - g.player.x, y - g.player.y) > 110 && g.chips.every(c => hyp(c.x - x, c.y - y) > 70)) break;
+  }
+  g.chips.push({ type, x, y, t: 0, life: 14, vx: rnd(-5, 5), vy: rnd(-5, 5) });
+}
+function updateChips(dt) {
+  const g = G, P = g.player;
+  if (g.phase !== 'clear') {
+    g.chipT -= dt;
+    if (g.chipT <= 0) { g.chipT = g.chips.length < 1 ? 1.2 : 2.6; if (g.chips.length < 3) spawnChip(); }
+  }
+  for (const c of g.chips) {
+    c.t += dt; c.life -= dt;
+    c.x = clamp(c.x + c.vx * dt, ARENA.x0 + 30, ARENA.x1 - 30); c.y = clamp(c.y + c.vy * dt, ARENA.y0 + 24, ARENA.y1 - 24);
+    if (hyp(c.x - P.x, c.y - P.y) < 24) {
+      c.dead = true;
+      if (g.stack.length >= g.stackCap) { stackOverflow(); continue; }
+      g.stack.push(c.type);                                     // PUSH
+      g.stackFx = .25;
+      Snd.play('pickup', g.stack.length);
+      pop(c.x, c.y - 16, 'PUSH ' + TYPES[c.type].chip, TYPES[c.type].color);
+      if (g.stack.length === 2) tip('swap');
+      if (g.stack.length === g.stackCap) pop(P.x, P.y + 32, 'STACK FULL', '#ff3b5c');
+    }
+  }
+  g.chips = g.chips.filter(c => !c.dead && c.life > 0);
+}
+function stackOverflow() {
+  const g = G, P = g.player;
+  g.stack.length = 0; comboBreak();
+  g.shake = .35; g.glitch = .3; g.stats.overflows++;
+  burst(P.x, P.y, '#ff3b5c', 30, 260);
+  pop(P.x, P.y - 40, 'STACK OVERFLOW', '#ff3b5c', true);
+  Snd.play('overflow'); tip('overflow');
+}
+
+/* ---------- гравець ---------- */
+function updatePlayer(dt) {
+  const g = G, P = g.player;
+  if (P.inv > 0) P.inv -= dt;
+  if (g.stackFx > 0) g.stackFx -= dt;
+  let slow = 1;
+  for (const gb of g.garbage) if (hyp(gb.x - P.x, gb.y - P.y) < 20) { slow = .5; break; }
+  const sp = 255 * slow;
+  P.vx += (Input.mx * sp - P.vx) * Math.min(1, dt * 11);
+  P.vy += (Input.my * sp - P.vy) * Math.min(1, dt * 11);
+  P.x = clamp(P.x + P.vx * dt, ARENA.x0 + 14, ARENA.x1 - 14);
+  P.y = clamp(P.y + P.vy * dt, ARENA.y0 + 14, ARENA.y1 - 14);
+  if (Input.ax || Input.ay) P.ang = Math.atan2(Input.ay, Input.ax);
+  else if (hyp(Input.mx, Input.my) > .3) P.ang += angDiff(P.ang, Math.atan2(Input.my, Input.mx)) * Math.min(1, dt * 16);
+  if (hyp(P.vx, P.vy) > 60 && Math.random() < dt * 45) {
+    const a = P.ang + Math.PI + rnd(-.4, .4);
+    g.parts.push({ x: P.x + Math.cos(a) * 14, y: P.y + Math.sin(a) * 14, vx: Math.cos(a) * 90, vy: Math.sin(a) * 90, life: .35, max: .35, col: pick(['#ff9a3d', '#ff4bd8']), s: 3 });
+  }
+  // ПОСТРІЛ — лише за командою гравця.
+  // Стек не порожній: натискання = POP верхнього чіпа (фікс).
+  // Стек порожній: printf-постріл (1 HP); якщо тримати кнопку — не частіше ніж раз на 0.3 с.
+  g.fireCD -= dt;
+  if (!Input.cur.fire) g.fireArmed = true;        // SPACE, яким підтвердили меню, не стріляє
+  const fireShot = (type, speed) => {
+    const t = aimTarget(P.x, P.y, type);
+    const a = t ? Math.atan2(t.y - P.y, t.x - P.x) : P.ang;
+    if (t) P.ang = a;                              // корабель розвертається до цілі
+    g.shots.push({ x: P.x + Math.cos(a) * 18, y: P.y + Math.sin(a) * 18, vx: Math.cos(a) * speed, vy: Math.sin(a) * speed,
+      type, target: t, life: 2.2, r: type === 'PRINTF' ? 4 : 6 });
+  };
+  if (g.stack.length) {
+    if (g.fireArmed && Input.pressed('fire') && g.fireCD <= 0) {
+      fireShot(g.stack.pop(), 560);                // POP
+      g.stats.shots++; g.fireCD = .3; g.stackFx = .25;
+      Snd.play('pop');
+    }
+  } else if (g.fireArmed && Input.cur.fire && g.fireCD <= 0) {
+    fireShot('PRINTF', 520);
+    g.fireCD = .3; Snd.play('printf'); tip('printf');
+  }
+  // SWAP
+  if (Input.pressed('swap')) {
+    const n = g.stack.length;
+    if (n >= 2) { [g.stack[n - 1], g.stack[n - 2]] = [g.stack[n - 2], g.stack[n - 1]]; g.stackFx = .25; Snd.play('swap'); pop(P.x, P.y - 28, 'SWAP', '#8fd8ff'); }
+    else Snd.play('underflow');
+  }
+  if (Input.pressed('gc')) startGC();
+}
+function hurtPlayer(cause, force) {
+  const g = G, P = g.player;
+  if ((P.inv > 0 && !force) || g.phase === 'dead') return;
+  g.lives--; P.inv = 1.8; comboBreak();
+  g.shake = .35; g.glitch = .25; g.stats.cause = cause;
+  burst(P.x, P.y, '#ff3b5c', 26, 240);
+  Snd.play('hurt');
+  for (const b of g.bugs) { const dx = b.x - P.x, dy = b.y - P.y, d = hyp(dx, dy) || 1; if (d < 130) { b.vx += dx / d * 420; b.vy += dy / d * 420; } }
+  if (g.lives <= 0) {
+    g.phase = 'dead'; g.phaseT = 2.4; g.glitch = 1.2; g.shake = 1;
+    burst(P.x, P.y, '#ffffff', 60, 380); burst(P.x, P.y, '#29f4ff', 40, 300);
+    Snd.play('over');
+  } else pop(P.x, P.y - 34, '-1 ПРОЦЕС', '#ff3b5c', true);
+}
+
+/* ---------- баги ---------- */
+function dropGarbage(x, y) {
+  const g = G;
+  g.garbage.push({ x: clamp(x + rnd(-10, 10), ARENA.x0 + 10, ARENA.x1 - 10), y: clamp(y + rnd(-10, 10), ARENA.y0 + 10, ARENA.y1 - 10), rot: rnd(0, 6) });
+  Snd.play('drop'); tip('heap');
+  if (g.garbage.length >= 20) {                              // HEAP 100% → OutOfMemoryError
+    const gone = g.garbage.splice(0, 10);
+    for (const gb of gone) burst(gb.x, gb.y, '#9a7bff', 5, 120);
+    pop(g.player.x, g.player.y - 50, 'OutOfMemoryError', '#ff3b5c', true);
+    hurtPlayer('OutOfMemoryError: heap 100%', true);
+  }
+}
+function updateBugs(dt) {
+  const g = G, P = g.player, frozen = g.freeze > 0;
+  for (const b of g.bugs) {
+    b.t += dt; if (b.flash > 0) b.flash -= dt; if (b.grace > 0) b.grace -= dt;
+    if (frozen) continue;
+    const dx = P.x - b.x, dy = P.y - b.y, d = hyp(dx, dy) || 1, k = b.d;
+    let tvx = 0, tvy = 0, acc = 6;
+    if (b.type === 'NULL') {
+      if (b.tp) {
+        b.tpT2 -= dt;
+        if (b.tp === 'out' && b.tpT2 <= 0) {
+          let nx = b.x, ny = b.y;
+          for (let i = 0; i < 10; i++) {
+            const a = rnd(0, Math.PI * 2), r = rnd(90, 200);
+            nx = clamp(b.x + Math.cos(a) * r, ARENA.x0 + 20, ARENA.x1 - 20); ny = clamp(b.y + Math.sin(a) * r, ARENA.y0 + 20, ARENA.y1 - 20);
+            if (hyp(nx - P.x, ny - P.y) > 110) break;
+          }
+          b.x = nx; b.y = ny; b.tp = 'in'; b.tpT2 = .35; b.vx = b.vy = 0;
+        } else if (b.tp === 'in' && b.tpT2 <= 0) { b.tp = null; b.tpT = rnd(3.5, 6); }
+      } else {
+        b.tpT -= dt;
+        if (b.tpT <= 0) { b.tp = 'out'; b.tpT2 = .35; Snd.play('teleport'); }
+        tvx = dx / d * 62 * k; tvy = dy / d * 62 * k;
+      }
+    } else if (b.type === 'LOOP') {
+      b.oa += 1.2 * k * dt; b.or = Math.max(70, b.or - 9 * k * dt);
+      const tx = P.x + Math.cos(b.oa) * b.or, ty = P.y + Math.sin(b.oa) * b.or;
+      const ex = tx - b.x, ey = ty - b.y, e = hyp(ex, ey) || 1, s = Math.min(170 * k, e * 4);
+      tvx = ex / e * s; tvy = ey / e * s;
+    } else if (b.type === 'RACE') {
+      b.jt -= dt; if (b.jt <= 0) { b.jt = rnd(.45, .9); b.jit = rnd(-.8, .8); }
+      const a = Math.atan2(dy, dx) + b.jit;
+      tvx = Math.cos(a) * 130 * k; tvy = Math.sin(a) * 130 * k; acc = 7;
+    } else if (b.type === 'LEAK') {
+      b.scale = Math.min(1.9, b.scale + .035 * dt); b.r = 13 * b.scale;        // хітбокс росте разом зі спрайтом
+      b.dropT -= dt; if (b.dropT <= 0) { b.dropT = 4; dropGarbage(b.x, b.y); }
+      tvx = dx / d * 42 * k; tvy = dy / d * 42 * k;
+    }
+    b.vx += (tvx - b.vx) * Math.min(1, dt * acc); b.vy += (tvy - b.vy) * Math.min(1, dt * acc);
+    b.x = clamp(b.x + b.vx * dt, ARENA.x0 + 12, ARENA.x1 - 12);
+    b.y = clamp(b.y + b.vy * dt, ARENA.y0 + 12, ARENA.y1 - 12);
+  }
+  // розштовхування — чесний O(n²), але n ≤ 34
+  const B = g.bugs;
+  for (let i = 0; i < B.length; i++) for (let j = i + 1; j < B.length; j++) {
+    const a = B[i], b = B[j]; if (a.tp || b.tp) continue;
+    const dx = b.x - a.x, dy = b.y - a.y, d = hyp(dx, dy) || .01, m = (a.r + b.r) * .85;
+    if (d < m) { const push = (m - d) / 2, nx = dx / d, ny = dy / d; a.x -= nx * push; a.y -= ny * push; b.x += nx * push; b.y += ny * push; }
+  }
+  if (P.inv <= 0) for (const b of B) if (!b.tp && !(b.grace > 0) && hyp(b.x - P.x, b.y - P.y) < b.r * .75 + P.r) { hurtPlayer(TYPES[b.type].name); break; }
+}
+function killBug(b, fixed) {
+  const g = G; b.dead = true;
+  burst(b.x, b.y, bugCol(b.type), fixed ? 26 : 16, fixed ? 260 : 180);
+  if (fixed) {
+    const v = 200 * g.mult * hintMul(); addScore(v); g.stats.fixes++; comboUp();
+    pop(b.x, b.y - 22, `✓ ${TYPES[b.type].fix} +${v}`, TYPES[b.type].color);
+    Snd.play('fix');
+  } else { addScore(60); pop(b.x, b.y - 18, '+60', '#b9bde8'); Snd.play('kill'); }
+}
+function forkBug(b) {
+  const g = G; comboBreak(); g.stats.forks++;
+  if (g.bugs.length < 34) {
+    const c = makeBug(b.type, b.x + rnd(-22, 22), b.y + rnd(-22, 22));
+    c.hp = b.hp; c.flash = .25; c.scale = b.scale; c.r = b.r;
+    g.bugs.push(c);
+  }
+  if (b.type === 'LEAK') { b.scale = Math.min(1.9, b.scale + .2); b.r = 13 * b.scale; }
+  burst(b.x, b.y, '#ff3b5c', 12, 200);
+  pop(b.x, b.y - 26, 'fork()!', '#ff3b5c', true);
+  Snd.play('wrong'); tip('fork');
+}
+function hitBug(b, s) {
+  if (s.type === 'PRINTF') {
+    b.hp--; b.flash = .1; burst(s.x, s.y, '#ffffff', 4, 90);
+    if (b.hp <= 0) killBug(b, false); else Snd.play('hit');
+  } else if (s.type === b.type) killBug(b, true);
+  else forkBug(b);
+}
+
+/* ---------- бос: зв'язний список ---------- */
+function spawnBoss() {
+  const g = G, n = g.bossPending || 6, nodes = [];
+  const x = (ARENA.x0 + ARENA.x1) / 2;
+  for (let i = 0; i < n; i++) nodes.push({ type: pick(g.waveInfo.pool), x, y: ARENA.y0 + 150 - i * 2 });
+  g.boss = { nodes, hp: 6, max: 6, t: 0, ang: Math.PI / 2, flash: 0 };
+  g.bossPending = 0; g.shake = .5;
+  tip('boss');
+}
+function updateBoss(dt) {
+  const B = G.boss; if (!B || !B.nodes.length) return;
+  const P = G.player, h = B.nodes[0];
+  B.t += dt; if (B.flash > 0) B.flash -= dt;
+  if (G.freeze <= 0) {
+    const cx = (ARENA.x0 + ARENA.x1) / 2, cy = (ARENA.y0 + ARENA.y1) / 2;
+    const tx = (cx + Math.cos(B.t * .55) * 330) * .7 + P.x * .3, ty = (cy + Math.sin(B.t * 1.1) * 160) * .7 + P.y * .3;
+    B.ang += clamp(angDiff(B.ang, Math.atan2(ty - h.y, tx - h.x)), -2.4 * dt, 2.4 * dt);
+    const sp = 80 + G.waveInfo.cyc * 10;
+    h.x = clamp(h.x + Math.cos(B.ang) * sp * dt, ARENA.x0 + 28, ARENA.x1 - 28);
+    h.y = clamp(h.y + Math.sin(B.ang) * sp * dt, ARENA.y0 + 22, ARENA.y1 - 22);
+    for (let i = 1; i < B.nodes.length; i++) {                 // кожен вузол тягнеться за попереднім (next)
+      const a = B.nodes[i - 1], n = B.nodes[i], dx = n.x - a.x, dy = n.y - a.y, d = hyp(dx, dy) || 1;
+      if (d > 48) { n.x = a.x + dx / d * 48; n.y = a.y + dy / d * 48; }
+    }
+  }
+  if (P.inv <= 0) for (let i = 0; i < B.nodes.length; i++) {
+    const n = B.nodes[i];
+    if (hyp(n.x - P.x, n.y - P.y) < (i === 0 ? 22 : 15) + P.r) { hurtPlayer('SPAGHETTI.exe (linked list)'); break; }
+  }
+}
+function hitHead(s) {
+  const g = G, B = g.boss, h = B.nodes[0];
+  if (s.type === 'PRINTF') {
+    B.hp--; B.flash = .08; burst(s.x, s.y, '#ffffff', 4, 90); Snd.play('hit');
+    if (B.hp <= 0) popHead(false);
+  } else if (s.type === h.type) popHead(true);
+  else {
+    comboBreak(); g.stats.forks++;
+    if (B.nodes.length < 14) { const t = B.nodes[B.nodes.length - 1]; B.nodes.push({ type: pick(g.waveInfo.pool), x: t.x, y: t.y }); }
+    pop(h.x, h.y - 46, 'list.append()', '#ff3b5c', true); burst(h.x, h.y, '#ff3b5c', 12, 200);
+    Snd.play('wrong'); tip('fork');
+  }
+}
+function popHead(fixed) {
+  const g = G, B = g.boss, h = B.nodes.shift();
+  burst(h.x, h.y, bugCol(h.type), 30, 280);
+  if (fixed) { const v = 300 * g.mult * hintMul(); addScore(v); g.stats.fixes++; comboUp(); pop(h.x, h.y - 10, '+' + v, '#ffffff'); Snd.play('fix'); }
+  else { addScore(100); Snd.play('kill'); }
+  pop(h.x, h.y - 30, 'head = head.next', '#ffe23d', true);
+  B.hp = B.max; g.shake = Math.max(g.shake, .25);
+  if (!B.nodes.length) {
+    addScore(2500); g.boss = null; g.shake = .9; g.glitch = .4;
+    burst(h.x, h.y, '#ffe23d', 70, 420); burst(h.x, h.y, '#ff4bd8', 50, 320);
+    pop(h.x, h.y - 60, 'head == null ✓  +2500', '#3dff7a', true);
+    Snd.play('bossdie');
+  }
+}
+
+/* ---------- постріли ---------- */
+function updateShots(dt) {
+  const g = G, TL = targetList();
+  for (const s of g.shots) {
+    s.life -= dt;
+    // самонаведення на захоплену ціль; якщо ціль зникла (знищена, NULL «пропав») — захоплюємо нову за тим самим правилом
+    if (s.target && !targetAlive(s.target)) s.target = TL.length ? aimTarget(s.x, s.y, s.type) : null;
+    if (s.target) {
+      const hd = Math.atan2(s.vy, s.vx), sp = hyp(s.vx, s.vy);
+      const na = hd + clamp(angDiff(hd, Math.atan2(s.target.y - s.y, s.target.x - s.x)), -14 * dt, 14 * dt);
+      s.vx = Math.cos(na) * sp; s.vy = Math.sin(na) * sp;
+    }
+    if (s.type !== 'PRINTF') {
+      if (Math.random() < .5) g.parts.push({ x: s.x, y: s.y, vx: rnd(-20, 20), vy: rnd(-20, 20), life: .3, max: .3, col: TYPES[s.type].color, s: 3 });
+    }
+    s.x += s.vx * dt; s.y += s.vy * dt;
+    if (s.x < ARENA.x0 || s.x > ARENA.x1 || s.y < ARENA.y0 || s.y > ARENA.y1) { s.dead = true; continue; }
+    if (s.type === 'LEAK') for (const gb of g.garbage) if (!gb.dead && hyp(gb.x - s.x, gb.y - s.y) < 16) { gb.dead = true; addScore(10); burst(gb.x, gb.y, '#9a7bff', 6, 120); }
+    // захоплений постріл пролітає крізь інших багів і влучає лише у свою ціль
+    for (const b of g.bugs) {
+      if (b.dead || b.tp || (s.target && s.target !== b)) continue;
+      if (hyp(b.x - s.x, b.y - s.y) < b.r + s.r) { s.dead = true; hitBug(b, s); break; }
+    }
+    if (!s.dead && g.boss && g.boss.nodes.length && (!s.target || isHead(s.target))) {
+      const N = g.boss.nodes;
+      for (let i = 0; i < N.length; i++) {
+        if (s.target && i > 0) break;                           // ціль — голова: тіло списку пропускаємо
+        if (hyp(N[i].x - s.x, N[i].y - s.y) < (i === 0 ? 24 : 17) + s.r) {
+          s.dead = true;
+          if (i === 0) hitHead(s); else { burst(s.x, s.y, '#8a8fbf', 5, 100); Snd.play('clink'); }
+          break;
+        }
+      }
+    }
+  }
+  g.shots = g.shots.filter(s => !s.dead && s.life > 0);
+  g.bugs = g.bugs.filter(b => !b.dead);
+  g.garbage = g.garbage.filter(gb => !gb.dead);
+}
+
+/* ---------- GC: mark & sweep ---------- */
+function startGC() {
+  const g = G;
+  if (g.gcPhase || g.phase === 'dead') return;
+  if (g.gcCharges <= 0) { Snd.play('underflow'); pop(g.player.x, g.player.y - 28, 'GC: 0 ЗАРЯДІВ', '#ff3b5c'); return; }
+  g.gcCharges--; g.gcPhase = 'mark'; g.gcT = .6; g.stats.gcs++;
+  Snd.play('gc'); tip('gc');
+}
+function updateGC(dt) {
+  const g = G; if (!g.gcPhase) return;
+  g.gcT -= dt;
+  if (g.gcPhase === 'mark' && g.gcT <= 0) {
+    g.gcPhase = 'sweep'; g.gcT = .6; g.sweepX = ARENA.x0; g.freeze = 2.4;
+    pop((ARENA.x0 + ARENA.x1) / 2, ARENA.y0 + 40, 'STOP-THE-WORLD', '#29f4ff', true);
+  } else if (g.gcPhase === 'sweep') {
+    g.sweepX += (ARENA.x1 - ARENA.x0) / .6 * dt;
+    for (const gb of g.garbage) if (!gb.dead && gb.x < g.sweepX) { gb.dead = true; burst(gb.x, gb.y, '#3dff7a', 6, 140); addScore(10); }
+    g.garbage = g.garbage.filter(gb => !gb.dead);
+    if (g.gcT <= 0) { g.gcPhase = null; g.garbage.length = 0; }
+  }
+}
+
+/* ---------- ефекти ---------- */
+function updateFx(dt) {
+  const g = G; if (!g) return;
+  for (const p of g.parts) { p.life -= dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= .96; p.vy *= .96; }
+  g.parts = g.parts.filter(p => p.life > 0);
+  if (g.parts.length > 700) g.parts.splice(0, g.parts.length - 700);
+  for (const p of g.pops) { p.t += dt; p.y -= 26 * dt; }
+  g.pops = g.pops.filter(p => p.t < p.dur);
+  if (g.shake > 0) g.shake = Math.max(0, g.shake - dt * 1.8);
+  if (g.glitch > 0) g.glitch -= dt;
+}
+function updateToasts(dt) {
+  const g = G;
+  if (!g.toast && g.toasts.length) g.toast = g.toasts.shift();
+  if (g.toast) { g.toast.t -= dt; if (g.toast.t <= 0) g.toast = null; }
+}
+function updatePortals(dt) {
+  const g = G;
+  for (const p of g.portals) {
+    p.t += dt;
+    if (p.t >= p.dur) {
+      p.dead = true;
+      if (p.type === 'BOSS') spawnBoss();
+      else { g.bugs.push(makeBug(p.type, p.x, p.y)); tip(p.type); burst(p.x, p.y, bugCol(p.type), 14, 160); }
+    }
+  }
+  g.portals = g.portals.filter(p => !p.dead);
+}
+
+/* ---------- головний апдейт гри ---------- */
+function gameUpdate(dt) {
+  const g = G; g.t += dt;
+  updateFx(dt); updateToasts(dt);
+  if (g.phase === 'dead') { g.phaseT -= dt; if (g.phaseT <= 0) showGameOver(); return; }
+  if (Input.pressed('pause')) { pauseGame(); return; }
+  updatePlayer(dt);
+  updateChips(dt);
+  if (g.phase === 'intro') {
+    g.phaseT -= dt;
+    if (g.phaseT <= 0) {
+      g.phase = 'fight';
+      if (g.wave === 1) tip('queue');
+      if (g.bossPending) openPortal((ARENA.x0 + ARENA.x1) / 2, ARENA.y0 + 150, 'BOSS');
+    }
+  } else if (g.phase === 'fight') {
+    spawner(dt);
+    if (waveDone()) {
+      g.phase = 'clear'; g.phaseT = 2;
+      g.clearBonus = 150 * g.wave; addScore(g.clearBonus);
+      Snd.play('wave');
+    }
+  } else if (g.phase === 'clear') {
+    g.phaseT -= dt;
+    if (g.phaseT <= 0) { openQuiz(); return; }
+  }
+  updatePortals(dt); updateBugs(dt); updateBoss(dt); updateShots(dt); updateGC(dt);
+  if (g.freeze > 0) g.freeze -= dt;
+}
+
+/* =====================================================================
+   8. CODE REVIEW (вікторина між хвилями)
+   ===================================================================== */
+const Quiz = { t: 0, dur: 20, answered: false, correct: 0, q: null };
+function openQuiz() {
+  const g = G;
+  if (!g.qbag.length) g.qbag = shuffle(QUIZ.map((_, i) => i));
+  const q = QUIZ[g.qbag.pop()];
+  const order = shuffle([0, 1, 2]);
+  Quiz.q = q; Quiz.correct = order.indexOf(0); Quiz.t = Quiz.dur; Quiz.answered = false;
+  $('quizTitle').textContent = `CODE REVIEW #${pad(g.wave, 2)}`;
+  $('quizQ').textContent = q.q;
+  const box = $('quizOpts'); box.innerHTML = '';
+  order.forEach((oi, i) => {
+    const d = document.createElement('div');
+    d.className = 'nav qopt'; d.dataset.act = 'quiz:' + i;
+    d.textContent = `${String.fromCharCode(65 + i)}) ${q.a[oi]}`;
+    box.appendChild(d);
+  });
+  $('quizFb').textContent = 'Обери відповідь: W/S або D-pad, підтвердження — SPACE або (A).';
+  $('quizNext').classList.add('hidden');
+  $('quizBar').style.width = '100%';
+  STATE = 'quiz'; showScreen('scr-quiz');
+}
+function answerQuiz(i) {
+  if (Quiz.answered) return;
+  Quiz.answered = true;
+  const g = G, ok = i === Quiz.correct;
+  g.stats.qall++;
+  const opts = [...$('quizOpts').children];
+  opts.forEach((o, j) => {
+    o.classList.remove('nav', 'focus'); o.classList.add('locked');
+    if (j === Quiz.correct) o.classList.add('ok'); else if (j === i) o.classList.add('bad');
+  });
+  const fb = $('quizFb'); fb.innerHTML = '';
+  const b = document.createElement('b');
+  if (ok) {
+    g.stats.qok++; addScore(300);
+    const gcGain = g.gcCharges < 3; if (gcGain) g.gcCharges++;
+    b.className = 'g'; b.textContent = gcGain ? '✓ ПРАВИЛЬНО · +300 · +1 GC. ' : '✓ ПРАВИЛЬНО · +300. ';
+    Snd.play('good');
+  } else {
+    b.className = 'r'; b.textContent = i < 0 ? '⏱ ЧАС ВИЧЕРПАНО. ' : '✗ НЕ ЗОВСІМ. ';
+    Snd.play('bad');
+  }
+  fb.appendChild(b); fb.appendChild(document.createTextNode(Quiz.q.e));
+  $('quizNext').classList.remove('hidden');
+  refreshNav(0);
+}
+function quizUpdate(dt) {
+  if (Quiz.answered) return;
+  Quiz.t -= dt;
+  $('quizBar').style.width = Math.max(0, Quiz.t / Quiz.dur * 100) + '%';
+  if (Quiz.t <= 0) answerQuiz(-1);
+}
+function endQuiz() { hideAllScreens(); STATE = 'play'; startWave(G.wave + 1); }
+
+/* =====================================================================
+   9. GAME OVER + ВВЕДЕННЯ ІНІЦІАЛІВ
+   ===================================================================== */
+const CH = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+const Over = { nameMode: false, slots: [0, 0, 0], si: 0 };
+function showGameOver() {
+  const g = G, s = g.stats, acc = s.shots ? Math.round(s.fixes / s.shots * 100) : 0;
+  const tr = $('trace'); tr.innerHTML = '';
+  const line = (cls, t) => { const sp = document.createElement('span'); if (cls) sp.className = cls; sp.textContent = t; tr.appendChild(sp); tr.appendChild(document.createTextNode('\n')); };
+  line('e', 'Exception in thread "main" GameOver: processes == 0');
+  line('', `    at Arena.wave(${pad(g.wave, 2)} · ${g.waveInfo.o})`);
+  line('', `    at Player.score(${g.score} · 0x${g.score.toString(16).toUpperCase()})`);
+  line('', `    at Debugger.fix(${s.fixes} ${plural(s.fixes, ['правильний фікс', 'правильні фікси', 'правильних фіксів'])} · влучність ${acc}%)`);
+  line('', `    at Kernel.fork(${s.forks} ${plural(s.forks, ['зайвий клон', 'зайві клони', 'зайвих клонів'])})`);
+  line('', `    at Stack.overflow(${s.overflows}×)  ·  at GC.sweep(${s.gcs}×)`);
+  line('', `    at CodeReview.check(${s.qok}/${s.qall})`);
+  line('a', `Caused by: ${s.cause || 'unknown'}`);
+  Over.nameMode = qualifies(g.score);
+  Over.slots = [0, 0, 0]; Over.si = 0; Input.typed.length = 0;
+  $('nameBox').classList.toggle('hidden', !Over.nameMode);
+  $('overBtns').classList.toggle('hidden', Over.nameMode);
+  renderName();
+  STATE = 'over'; showScreen('scr-over');
+}
+function renderName() {
+  for (let i = 0; i < 3; i++) { const e = $('sl' + i); if (!e) continue; e.textContent = CH[Over.slots[i]]; e.classList.toggle('on', i === Over.si); }
+}
+function nameUpdate(dt) {
+  while (Input.typed.length) {
+    const c = CH.indexOf(Input.typed.shift());
+    if (c >= 0) { Over.slots[Over.si] = c; Snd.play('move'); if (Over.si < 2) Over.si++; }
+  }
+  const v = NavV.step(dt, Input.cur.up, Input.cur.down);
+  if (v) { Over.slots[Over.si] = (Over.slots[Over.si] - v + CH.length) % CH.length; Snd.play('move'); }
+  const h = NavH.step(dt, Input.cur.left, Input.cur.right);
+  if (h) { Over.si = clamp(Over.si + h, 0, 2); Snd.play('move'); }
+  if (Input.pressed('confirm')) { Snd.play('select'); if (Over.si < 2) Over.si++; else { saveName(); return; } }
+  if (Input.pressed('back')) {
+    if (Over.si > 0) { Over.si--; Snd.play('back'); }
+    else {                                          // ESC / (B) на першій літері — пропустити запис
+      Over.nameMode = false; Snd.play('back');
+      $('nameBox').classList.add('hidden'); $('overBtns').classList.remove('hidden');
+      refreshNav(0); return;
+    }
+  }
+  renderName();
+}
+function saveName() {
+  const n = Over.slots.map(i => CH[i]).join(''), L = getScores();
+  const rec = { n, s: G.score, w: G.wave };
+  L.push(rec); L.sort((a, b) => b.s - a.s);
+  const list = L.slice(0, 10); Store.set('stacksmash.scores', list);
+  Over.nameMode = false;
+  renderScores(list.indexOf(rec));
+  STATE = 'ui'; G = null; Snd.boss = false;
+  showScreen('scr-scores');
+}
+
+/* =====================================================================
+   10. МАЛЮВАННЯ ГРИ
+   ===================================================================== */
+function drawArena() {
+  const a = ARENA, w = a.x1 - a.x0, h = a.y1 - a.y0;
+  ctx.fillStyle = 'rgba(4,1,14,.72)'; ctx.fillRect(a.x0, a.y0, w, h);
+  ctx.fillStyle = 'rgba(120,90,255,.2)';
+  for (let x = a.x0 + 24; x < a.x1; x += 48) for (let y = a.y0 + 24; y < a.y1; y += 48) ctx.fillRect(x - 1, y - 1, 2, 2);
+  ctx.strokeStyle = 'rgba(41,244,255,.3)'; ctx.lineWidth = 1; ctx.strokeRect(a.x0 + .5, a.y0 + .5, w - 1, h - 1);
+  ctx.strokeStyle = '#29f4ff'; ctx.lineWidth = 2; const L = 18;
+  ctx.beginPath();
+  ctx.moveTo(a.x0, a.y0 + L); ctx.lineTo(a.x0, a.y0); ctx.lineTo(a.x0 + L, a.y0);
+  ctx.moveTo(a.x1 - L, a.y0); ctx.lineTo(a.x1, a.y0); ctx.lineTo(a.x1, a.y0 + L);
+  ctx.moveTo(a.x0, a.y1 - L); ctx.lineTo(a.x0, a.y1); ctx.lineTo(a.x0 + L, a.y1);
+  ctx.moveTo(a.x1 - L, a.y1); ctx.lineTo(a.x1, a.y1); ctx.lineTo(a.x1, a.y1 - L);
+  ctx.stroke();
+  txt('0x0000', a.x0 + 6, a.y0 + 9, 'rgba(41,244,255,.45)', 6);
+  txt('0xFFFF', a.x1 - 6, a.y1 - 8, 'rgba(41,244,255,.45)', 6, 'right');
+}
+function drawChip(c) {
+  const T0 = TYPES[c.type], col = T0.color;
+  if (c.life < 3 && Math.floor(c.t * 10) % 2) return;
+  const y = c.y + Math.sin(c.t * 3) * 3, w = 50, h = 22;
+  glow(c.x, y, 38, col, .45);
+  ctx.strokeStyle = col; ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  for (let i = -1; i <= 1; i++) { ctx.moveTo(c.x + i * 13, y - h / 2); ctx.lineTo(c.x + i * 13, y - h / 2 - 5); ctx.moveTo(c.x + i * 13, y + h / 2); ctx.lineTo(c.x + i * 13, y + h / 2 + 5); }
+  ctx.stroke();
+  ctx.fillStyle = '#0a0618'; rr(c.x - w / 2, y - h / 2, w, h, 4); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = col; ctx.beginPath(); ctx.arc(c.x - w / 2 + 5, y - h / 2 + 5, 1.6, 0, 7); ctx.fill();
+  txt(T0.chip, c.x, y + 1, col, 7, 'center');
+}
+function drawPortal(p) {
+  const col = p.type === 'BOSS' ? '#ff3b5c' : bugCol(p.type), k = p.t / p.dur, R = (p.type === 'BOSS' ? 48 : 26) * (0.4 + k * .6);
+  glow(p.x, p.y, R * 1.8, col, .35 + k * .3);
+  ctx.strokeStyle = col; ctx.lineWidth = 2;
+  for (let i = 0; i < 3; i++) {
+    const a0 = p.t * 6 + i * 2.094;
+    ctx.beginPath(); ctx.arc(p.x, p.y, R - i * 5, a0, a0 + 1.6); ctx.stroke();
+  }
+  txt(p.type === 'BOSS' ? 'malloc(∞)' : 'spawn', p.x, p.y + R + 10, rgba(col.length === 7 ? col : '#ff3b5c', .7), 6, 'center');
+}
+function drawBug(b) {
+  const col = bugCol(b.type), f = Math.floor(b.t * 6) % 2;
+  let al = 1;
+  if (b.tp) al = clamp(b.tp === 'out' ? b.tpT2 / .35 : 1 - b.tpT2 / .35, .08, 1);
+  const spr = b.flash > 0 ? SPR[b.type + 'W'][f] : bugSpr(b.type, f);
+  ctx.save(); ctx.globalAlpha = al;
+  glow(b.x, b.y, b.r * 2.6, col, .3);
+  if (b.type === 'RACE') { const o = Math.sin(b.t * 20) * 5; drawSpr(spr, b.x - 8 + o, b.y - 3, .75); drawSpr(spr, b.x + 8 - o, b.y + 3, .75); }
+  else if (b.type === 'LOOP') drawSpr(spr, b.x, b.y, 1, b.t * 5);
+  else if (b.type === 'LEAK') drawSpr(spr, b.x, b.y, b.scale);
+  else drawSpr(spr, b.x, b.y);
+  if (b.tp) { ctx.setLineDash([3, 4]); ctx.strokeStyle = col; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(b.x, b.y, b.r + 8, 0, 7); ctx.stroke(); ctx.setLineDash([]); txt('null', b.x, b.y, col, 7, 'center'); }
+  txt(TYPES[b.type].short, b.x, b.y - b.r - 12, col, 6, 'center');
+  for (let i = 0; i < b.max; i++) { ctx.fillStyle = i < b.hp ? col : 'rgba(255,255,255,.15)'; ctx.fillRect(b.x - b.max * 3.5 + i * 7, b.y + b.r + 6, 5, 3); }
+  if (G.freeze > 0) { ctx.setLineDash([2, 3]); ctx.strokeStyle = 'rgba(41,244,255,.8)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(b.x, b.y, b.r + 5, 0, 7); ctx.stroke(); ctx.setLineDash([]); }
+  ctx.restore();
+}
+function arrow(ax, ay, bx, by, r1, r2, col) {
+  const dx = bx - ax, dy = by - ay, d = hyp(dx, dy) || 1, ux = dx / d, uy = dy / d;
+  if (d < r1 + r2 + 4) return;
+  const sx = ax + ux * r1, sy = ay + uy * r1, ex = bx - ux * r2, ey = by - uy * r2;
+  ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(ex, ey); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(ex, ey); ctx.lineTo(ex - ux * 7 - uy * 4, ey - uy * 7 + ux * 4); ctx.lineTo(ex - ux * 7 + uy * 4, ey - uy * 7 - ux * 4); ctx.closePath(); ctx.fill();
+}
+function drawBoss() {
+  const B = G.boss; if (!B || !B.nodes.length) return;
+  const N = B.nodes, P = G.player;
+  for (let i = 0; i < N.length - 1; i++) arrow(N[i].x, N[i].y, N[i + 1].x, N[i + 1].y, i === 0 ? 27 : 20, 20, 'rgba(255,255,255,.55)');
+  const last = N[N.length - 1];
+  txt('→ null', last.x, last.y + 22, '#5a5f8f', 6, 'center');
+  for (let i = N.length - 1; i >= 0; i--) {
+    const n = N[i], col = bugCol(n.type), head = i === 0, w = head ? 56 : 42, h = head ? 30 : 22;
+    glow(n.x, n.y, head ? 50 : 30, col, head ? .5 : .3);
+    ctx.fillStyle = head && B.flash > 0 ? '#ffffff' : '#0b0520';
+    rr(n.x - w / 2, n.y - h / 2, w, h, 5); ctx.fill();
+    ctx.strokeStyle = col; ctx.lineWidth = head ? 2.5 : 1.5; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(n.x + w / 2 - 11, n.y - h / 2); ctx.lineTo(n.x + w / 2 - 11, n.y + h / 2); ctx.stroke();
+    ctx.fillStyle = col; ctx.fillRect(n.x + w / 2 - 7, n.y - 2, 4, 4);
+    txt(TYPES[n.type].short, n.x - 5, n.y + 1, col, head ? 8 : 6, 'center');
+    if (head) {
+      const ea = Math.atan2(P.y - n.y, P.x - n.x);
+      for (const ex of [-11, 11]) {
+        ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(n.x + ex, n.y - 25, 7, 0, 7); ctx.fill();
+        ctx.fillStyle = '#140024'; ctx.beginPath(); ctx.arc(n.x + ex + Math.cos(ea) * 3, n.y - 25 + Math.sin(ea) * 3, 3.2, 0, 7); ctx.fill();
+      }
+      txt('HEAD', n.x, n.y - 41, '#ffe23d', 6, 'center');
+      txt('SPAGHETTI.exe', n.x, n.y - 53, '#ff3b5c', 7, 'center', PF, 6);
+      ctx.fillStyle = 'rgba(255,255,255,.15)'; ctx.fillRect(n.x - 28, n.y + h / 2 + 5, 56, 4);
+      ctx.fillStyle = col; ctx.fillRect(n.x - 28, n.y + h / 2 + 5, 56 * B.hp / B.max, 4);
+    }
+  }
+}
+function drawShots() {
+  for (const s of G.shots) {
+    if (s.type === 'PRINTF') { glow(s.x, s.y, 12, '#ffffff', .5); ctx.fillStyle = '#ffffff'; ctx.fillRect(s.x - 2, s.y - 2, 4, 4); }
+    else {
+      const col = TYPES[s.type].color; glow(s.x, s.y, 26, col, .8);
+      ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(s.x, s.y, 4, 0, 7); ctx.fill();
+      txt(TYPES[s.type].chip, s.x, s.y - 12, col, 6, 'center');
+    }
+  }
+}
+function drawPlayer() {
+  const g = G, P = g.player;
+  if (g.phase === 'dead') return;
+  if (P.inv > 0 && Math.floor(P.inv * 14) % 2) return;
+  glow(P.x, P.y, 34, '#29f4ff', .3);
+  drawSpr(SPR.ship, P.x, P.y, 1, P.ang + Math.PI / 2);
+  // приціл показує, куди полетить НАСТУПНИЙ постріл
+  const top = g.stack[g.stack.length - 1], t = aimTarget(P.x, P.y, top || 'PRINTF');
+  const label = top ? TYPES[top].chip : 'printf';
+  if (!t) { txt(label, P.x, P.y - 30, '#6a6f9f', 6, 'center'); return; }
+  const bad = top && t.type !== top;                 // у стеку не той фікс → буде fork()
+  const col = bad ? '#ff3b5c' : top ? TYPES[top].color : '#dfe3ff';
+  const R0 = (isHead(t) ? 30 : (t.r || 14) + 9) + Math.sin(g.t * 8) * 2;
+  ctx.save();
+  ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.globalAlpha = .9;
+  for (let i = 0; i < 4; i++) {                      // чотири «кутики» навколо цілі
+    const a0 = i * Math.PI / 2 + Math.PI / 4 + g.t * 1.5;
+    ctx.beginPath(); ctx.arc(t.x, t.y, R0, a0 - .35, a0 + .35); ctx.stroke();
+  }
+  ctx.setLineDash([2, 5]); ctx.lineWidth = 1; ctx.globalAlpha = .35;
+  ctx.beginPath(); ctx.moveTo(P.x, P.y); ctx.lineTo(t.x, t.y); ctx.stroke();
+  ctx.restore();
+  txt(bad ? label + ' ✗ fork()' : label, t.x, t.y + R0 + 10, col, 6, 'center');
+}
+function drawFx() {
+  const g = G;
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  for (const p of g.parts) { ctx.globalAlpha = clamp(p.life / p.max, 0, 1); ctx.fillStyle = p.col; ctx.fillRect(p.x - p.s / 2, p.y - p.s / 2, p.s, p.s); }
+  ctx.restore();
+  for (const p of g.pops) {
+    ctx.globalAlpha = clamp((p.dur - p.t) * 3, 0, 1);
+    txt(p.text, p.x, p.y, p.col, p.big ? 10 : 7, 'center', PF, p.big ? 8 : 0);
+  }
+  ctx.globalAlpha = 1;
+}
+function drawGC() {
+  const g = G, P = g.player;
+  if (g.gcPhase === 'mark') {
+    const k = 1 - g.gcT / .6;
+    ctx.strokeStyle = `rgba(61,255,122,${1 - k})`; ctx.lineWidth = 2;
+    for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.arc(P.x, P.y, Math.max(1, k * 700 - i * 60), 0, 7); ctx.stroke(); }
+    for (const b of g.bugs) { ctx.strokeStyle = '#3dff7a'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(b.x, b.y, b.r + 10, 0, 7); ctx.stroke(); txt('reachable', b.x, b.y + b.r + 18, '#3dff7a', 5, 'center'); }
+    for (const gb of g.garbage) { ctx.strokeStyle = '#ff3b5c'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(gb.x - 7, gb.y - 7); ctx.lineTo(gb.x + 7, gb.y + 7); ctx.moveTo(gb.x + 7, gb.y - 7); ctx.lineTo(gb.x - 7, gb.y + 7); ctx.stroke(); }
+    txt('GC: MARK', (ARENA.x0 + ARENA.x1) / 2, ARENA.y0 + 20, '#3dff7a', 9, 'center', PF, 8);
+  } else if (g.gcPhase === 'sweep') {
+    const gr = ctx.createLinearGradient(g.sweepX - 90, 0, g.sweepX, 0);
+    gr.addColorStop(0, 'rgba(61,255,122,0)'); gr.addColorStop(1, 'rgba(61,255,122,.35)');
+    ctx.fillStyle = gr; ctx.fillRect(g.sweepX - 90, ARENA.y0, 90, ARENA.y1 - ARENA.y0);
+    ctx.fillStyle = '#b5ffcf'; ctx.fillRect(g.sweepX - 1, ARENA.y0, 3, ARENA.y1 - ARENA.y0);
+    txt('GC: SWEEP', (ARENA.x0 + ARENA.x1) / 2, ARENA.y0 + 20, '#3dff7a', 9, 'center', PF, 8);
+  }
+  if (g.freeze > 0) {
+    ctx.fillStyle = 'rgba(41,244,255,.06)'; ctx.fillRect(ARENA.x0, ARENA.y0, ARENA.x1 - ARENA.x0, ARENA.y1 - ARENA.y0);
+    if (!g.gcPhase) txt(`STOP-THE-WORLD · ${g.freeze.toFixed(1)}s`, (ARENA.x0 + ARENA.x1) / 2, ARENA.y0 + 20, '#29f4ff', 8, 'center', PF, 6);
+  }
+}
+
+/* ---------- HUD ---------- */
+function drawHUD() {
+  const g = G;
+  ctx.fillStyle = 'rgba(6,2,18,.85)'; ctx.fillRect(0, 0, W, TOP);
+  const gr = ctx.createLinearGradient(0, 0, W, 0);
+  gr.addColorStop(0, '#29f4ff'); gr.addColorStop(.5, '#ff4bd8'); gr.addColorStop(1, '#ffe23d');
+  ctx.fillStyle = gr; ctx.fillRect(0, TOP - 2, W, 2);
+  txt('SCORE', 16, 13, '#8a8fbf', 7);
+  txt(pad(g.score, 7), 16, 31, '#ffffff', 14, 'left', PF, 6);
+  txt('HEX', 148, 13, '#8a8fbf', 7);
+  txt('0x' + g.score.toString(16).toUpperCase(), 148, 31, '#29f4ff', 10);
+  const wi = g.waveInfo;
+  txt(`WAVE ${pad(g.wave, 2)} · ${wi.o}`, W / 2, 14, wi.boss ? '#ff3b5c' : '#ffe23d', 10, 'center', PF, 6);
+  const rem = g.queue.length + g.portals.length + g.bugs.length;
+  txt(g.boss ? `LINKED LIST · length = ${g.boss.nodes.length}` : `BUGS LEFT: ${rem}`, W / 2, 32, '#b9bde8', 7, 'center');
+  const hearts = Math.max(3, g.lives);
+  for (let i = 0; i < hearts; i++) drawSpr(i < g.lives ? SPR.heart : SPR.heartOff, W - 26 - i * 26, 15);
+  txt('GC', W - 262, 33, '#3dff7a', 7);
+  for (let i = 0; i < 3; i++) {
+    ctx.strokeStyle = '#3dff7a'; ctx.lineWidth = 1; ctx.strokeRect(W - 240 + i * 14, 28, 10, 10);
+    if (i < g.gcCharges) { ctx.fillStyle = '#3dff7a'; ctx.fillRect(W - 238 + i * 14, 30, 6, 6); }
+  }
+  const k = Math.log2(g.mult);
+  txt(`COMBO ${g.combo}  ×${g.mult}${k ? ' (1<<' + k + ')' : ''}`, W - 16, 33, g.mult > 1 ? '#ffe23d' : '#8a8fbf', 7, 'right');
+  drawStack(); drawHeap(); drawBottom();
+}
+function drawStack() {
+  const g = G, cap = g.stackCap, x = 12, w = 62, h = 22, gap = 5, base = ARENA.y1 - 18;
+  const topY = base - cap * (h + gap);
+  const full = g.stack.length >= cap, blink = full && Math.floor(g.t * 6) % 2;
+  txt('STACK', x + w / 2, topY - 24, full ? (blink ? '#ff3b5c' : '#ffe23d') : '#29f4ff', 8, 'center', PF, 5);
+  txt(full ? 'FULL!' : `${g.stack.length}/${cap}`, x + w / 2, topY - 10, full ? '#ff3b5c' : '#8a8fbf', 7, 'center');
+  for (let i = 0; i < cap; i++) {
+    const y = base - (i + 1) * (h + gap) + gap;
+    if (i < g.stack.length) {
+      const T0 = TYPES[g.stack[i]], isTop = i === g.stack.length - 1;
+      if (isTop) glow(x + w / 2, y + h / 2, 44, T0.color, g.stackFx > 0 ? .8 : .35);
+      ctx.fillStyle = rgba(T0.color, isTop ? .3 : .15); rr(x, y, w, h, 4); ctx.fill();
+      ctx.strokeStyle = T0.color; ctx.lineWidth = isTop ? 2 : 1; ctx.stroke();
+      txt(T0.chip, x + w / 2, y + h / 2 + 1, isTop ? '#ffffff' : T0.color, 7, 'center');
+      if (isTop) {
+        ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.moveTo(x + w + 3, y + h / 2); ctx.lineTo(x + w + 11, y + h / 2 - 5); ctx.lineTo(x + w + 11, y + h / 2 + 5); ctx.closePath(); ctx.fill();
+        txt('SP', x + w + 7, y - 4, '#ffffff', 5, 'center');
+      }
+    } else {
+      ctx.setLineDash([3, 3]); ctx.strokeStyle = 'rgba(138,143,191,.35)'; ctx.lineWidth = 1; rr(x, y, w, h, 4); ctx.stroke(); ctx.setLineDash([]);
+    }
+  }
+  if (!g.stack.length) txt('EMPTY', x + w / 2, base - h / 2 - 2, '#5a5f8f', 6, 'center');
+  txt('BASE', x + w / 2, base + 8, '#5a5f8f', 6, 'center');
+}
+function drawHeap() {
+  const x = W - 36, w = 20, y0 = ARENA.y0 + 30, y1 = ARENA.y1 - 18, hh = y1 - y0, pct = Math.min(1, G.garbage.length / 20);
+  txt('HEAP', x + w / 2, y0 - 14, pct > .75 && Math.floor(G.t * 6) % 2 ? '#ff3b5c' : '#8a8fbf', 6, 'center');
+  ctx.strokeStyle = 'rgba(138,143,191,.5)'; ctx.lineWidth = 1; rr(x, y0, w, hh, 4); ctx.stroke();
+  if (pct > 0) {
+    const fh = (hh - 4) * pct, gr = ctx.createLinearGradient(0, y1, 0, y0);
+    gr.addColorStop(0, '#3dff7a'); gr.addColorStop(.6, '#ffe23d'); gr.addColorStop(1, '#ff3b5c');
+    ctx.fillStyle = gr; ctx.fillRect(x + 3, y1 - 2 - fh, w - 6, fh);
+  }
+  ctx.fillStyle = 'rgba(0,0,0,.5)';
+  for (let i = 1; i < 10; i++) ctx.fillRect(x + 3, y0 + hh * i / 10, w - 6, 1);
+  txt(Math.round(pct * 100) + '%', x + w / 2, y1 + 9, pct > .75 ? '#ff3b5c' : '#b9bde8', 6, 'center');
+}
+function drawBottom() {
+  const g = G, y = ARENA.y1 + 15;
+  if (g.boss && g.boss.nodes.length) {
+    txt('head', ARENA.x0 + 4, y, '#ffe23d', 7);
+    let x = ARENA.x0 + 46; const N = g.boss.nodes, n = Math.min(N.length, 8);
+    for (let i = 0; i < n; i++) {
+      const col = bugCol(N[i].type);
+      ctx.strokeStyle = col; ctx.lineWidth = i === 0 ? 2 : 1; rr(x, y - 8, 40, 16, 3); ctx.stroke();
+      txt(TYPES[N[i].type].short, x + 20, y + 1, col, 6, 'center');
+      x += 40; txt('→', x + 7, y + 1, '#8a8fbf', 7, 'center'); x += 14;
+    }
+    txt(N.length > n ? `… null` : 'null', x + 2, y, '#5a5f8f', 7);
+  } else {
+    txt('QUEUE', ARENA.x0 + 4, y, '#8a8fbf', 7);
+    txt('front', ARENA.x0 + 50, y - 9, '#5a5f8f', 5);
+    const q = g.queue.slice(0, 14);
+    q.forEach((t, i) => drawSpr(bugSpr(t, 0), ARENA.x0 + 62 + i * 22, y, .42));
+    if (g.queue.length > 14) txt('+' + (g.queue.length - 14), ARENA.x0 + 62 + 14 * 22, y, '#8a8fbf', 7);
+    if (!g.queue.length) txt('∅ empty', ARENA.x0 + 62, y, '#5a5f8f', 6);
+  }
+  const hint = Input.dev === 'pad' ? '(A) ПОСТРІЛ · (X) SWAP · (Y) GC · START ПАУЗА' : 'SPACE ПОСТРІЛ · E SWAP · Q GC · ESC ПАУЗА';
+  txt(hint, ARENA.x1, y, '#6a6f9f', 6, 'right');
+}
+function drawToast() {
+  const tc = G.toast; if (!tc) return;
+  const cx = (ARENA.x0 + ARENA.x1) / 2, w = 560;
+  if (!tc.lines) tc.lines = wrapLines(tc.body, w - 28, `12px ${MF}`);
+  const h = 30 + tc.lines.length * 15, x = cx - w / 2, y = ARENA.y0 + 34;
+  ctx.globalAlpha = clamp(Math.min((tc.dur - tc.t) * 4, tc.t * 3), 0, 1);
+  ctx.fillStyle = 'rgba(8,3,26,.9)'; rr(x, y, w, h, 6); ctx.fill();
+  ctx.strokeStyle = 'rgba(41,244,255,.6)'; ctx.lineWidth = 1; ctx.stroke();
+  ctx.fillStyle = '#ffe23d'; ctx.fillRect(x, y + 6, 3, h - 12);
+  txt('ⓘ ' + tc.title, x + 14, y + 14, '#ffe23d', 8);
+  tc.lines.forEach((l, i) => txt(l, x + 14, y + 32 + i * 15, '#dfe3ff', 12, 'left', MF));
+  ctx.fillStyle = 'rgba(41,244,255,.5)'; ctx.fillRect(x + 6, y + h - 3, (w - 12) * (tc.t / tc.dur), 2);
+  ctx.globalAlpha = 1;
+}
+function drawBanner() {
+  const g = G, cx = (ARENA.x0 + ARENA.x1) / 2, cy = (ARENA.y0 + ARENA.y1) / 2 - 40;
+  if (g.phase === 'intro') {
+    const wi = g.waveInfo;
+    ctx.globalAlpha = clamp(Math.min((2.8 - g.phaseT) * 3, g.phaseT * 2), 0, 1);
+    neon(wi.boss ? '!! BOSS WAVE !!' : `WAVE ${pad(g.wave, 2)}`, cx, cy, wi.boss ? 24 : 28, wi.boss ? '#ff3b5c' : '#ffe23d');
+    txt(wi.o, cx, cy + 40, '#29f4ff', 16, 'center', PF, 10);
+    txt(wi.boss ? `SPAGHETTI.exe · зв’язний список з ${g.bossPending} вузлів` : `n = ${wi.n}   →   ${wi.count} ${plural(wi.count, ['баг', 'баги', 'багів'])}`, cx, cy + 70, '#ffffff', 9, 'center');
+    txt(wi.why, cx, cy + 94, '#b9bde8', 13, 'center', MF);
+    ctx.globalAlpha = 1;
+  } else if (g.phase === 'clear') {
+    ctx.globalAlpha = clamp(Math.min((2 - g.phaseT) * 4, g.phaseT * 3), 0, 1);
+    neon('WAVE CLEAR', cx, cy, 26, '#3dff7a');
+    txt(`+${g.clearBonus}  ·  далі — CODE REVIEW`, cx, cy + 38, '#ffffff', 9, 'center');
+    ctx.globalAlpha = 1;
+  } else if (g.phase === 'dead') {
+    ctx.globalAlpha = clamp((2.4 - g.phaseT) * 2, 0, 1);
+    neon('SEGMENTATION FAULT', cx, cy, 22, '#ff3b5c');
+    txt('(core dumped)', cx, cy + 34, '#b9bde8', 9, 'center');
+    ctx.globalAlpha = 1;
+  }
+}
+function drawGame() {
+  const g = G, sh = g.shake > 0 && Settings.shake ? g.shake * 6 : 0;
+  ctx.save();
+  if (sh) ctx.translate(rnd(-sh, sh), rnd(-sh, sh));
+  drawArena();
+  for (const gb of g.garbage) drawSpr(SPR.garbage, gb.x, gb.y, 1, gb.rot);
+  for (const c of g.chips) drawChip(c);
+  for (const p of g.portals) drawPortal(p);
+  drawBoss();
+  for (const b of g.bugs) drawBug(b);
+  drawShots();
+  drawPlayer();
+  drawGC();
+  drawFx();
+  ctx.restore();
+  drawHUD();
+  drawToast();
+  drawBanner();
+}
+function postFX() {
+  if (!G || G.glitch <= 0 || STATE === 'ui') return;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  const n = 7, cw = cvs.width, chh = cvs.height;
+  for (let i = 0; i < n; i++) {
+    const sy = Math.floor(rnd(0, chh)), h = Math.floor(rnd(3, 22) * K), dx = Math.floor(rnd(-24, 24) * K);
+    ctx.drawImage(cvs, 0, sy, cw, h, dx, sy, cw, h);
+  }
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.fillStyle = 'rgba(255,75,216,.08)'; ctx.fillRect(0, Math.floor(rnd(0, chh)), cw, Math.floor(8 * K));
+  ctx.fillStyle = 'rgba(41,244,255,.08)'; ctx.fillRect(0, Math.floor(rnd(0, chh)), cw, Math.floor(6 * K));
+  ctx.globalCompositeOperation = 'source-over';
+}
+
+/* =====================================================================
+   11. ЦИКЛ, РОЗМІРИ, ІНІЦІАЛІЗАЦІЯ
+   ===================================================================== */
+function resize() {
+  const wrap = $('wrap'), r = wrap.getBoundingClientRect();
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  cvs.width = Math.max(1, Math.round(r.width * dpr)); cvs.height = Math.max(1, Math.round(r.height * dpr));
+  K = cvs.width / W;
+  wrap.style.fontSize = (r.width / W * 16) + 'px';
+}
+function update(dt) {
+  BG.update(dt);
+  switch (STATE) {
+    case 'ui': Attract.update(dt); updatePadStatus(); uiUpdate(dt); break;
+    case 'play': gameUpdate(dt); break;
+    case 'pause': uiUpdate(dt); break;
+    case 'quiz': quizUpdate(dt); uiUpdate(dt); break;
+    case 'over': updateFx(dt); uiUpdate(dt); break;
+  }
+}
+function draw() {
+  ctx.setTransform(K, 0, 0, K, 0, 0);
+  ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+  ctx.imageSmoothingEnabled = true;
+  BG.draw();
+  ctx.imageSmoothingEnabled = false;
+  if (G && STATE !== 'ui') drawGame(); else Attract.draw();
+  postFX();
+}
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(.05, Math.max(0, (now - last) / 1000)); last = now;
+  try { Input.poll(); update(dt); draw(); }
+  catch (e) { console.error(e); }
+  requestAnimationFrame(frame);
+}
+function init() {
+  resize(); addEventListener('resize', resize);
+  buildSprites(); BG.init(); Attract.init(); buildDex();
+  applySettings(); renderSettings();
+  goMenu();
+  requestAnimationFrame(frame);
+}
+// тестовий хук (без впливу на гру)
+window.__SS = { get G() { return G; }, get STATE() { return STATE; }, startGame, openQuiz, showGameOver, startWave, hurtPlayer };
+init();
+})();
+</script>
+</body>
+</html>
