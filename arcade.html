@@ -1,0 +1,1322 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Career Bot · Який ти Політехнік?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Exo+2:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#07040f;--cy:#22e6ff;--mg:#ff3df0;--pu:#a855f7;--yl:#ffd23f;--or:#ff9a1f;--gr:#2bff88;--rd:#ff4458;
+  --tx:#e9ecff;--dim:#8a8fbf;
+  --rainbow:linear-gradient(90deg,#a855f7,#ec4899,#f97316,#eab308,#22c55e,#06b6d4,#3b82f6,#8b5cf6);
+  --pf:'Press Start 2P',ui-monospace,monospace;--bf:'Exo 2',system-ui,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--tx);font-family:var(--bf);
+  user-select:none;-webkit-user-select:none;touch-action:none}
+#stage{position:absolute;left:50%;top:50%;width:960px;height:540px;transform-origin:center center;overflow:hidden;background:var(--bg)}
+#game{position:absolute;inset:0;width:960px;height:540px;image-rendering:pixelated}
+#crt{position:absolute;inset:0;pointer-events:none;z-index:60;
+  background:repeating-linear-gradient(0deg,rgba(0,0,0,.2) 0 1px,transparent 1px 3px),
+             radial-gradient(ellipse at center,transparent 58%,rgba(0,0,0,.6) 100%)}
+@keyframes rainbow{to{background-position:200% center}}
+@keyframes blink{50%{opacity:0}}
+@keyframes scrIn{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:none}}
+@keyframes pulse{50%{box-shadow:0 0 22px var(--cy),inset 0 0 12px rgba(34,230,255,.35)}}
+
+/* ---------- screens ---------- */
+.screen{position:absolute;inset:0;display:none;z-index:20;flex-direction:column;align-items:center;justify-content:center;padding:22px}
+.screen.on{display:flex;animation:scrIn .3s ease}
+.shade{background:rgba(5,2,14,.74);backdrop-filter:blur(3px)}
+.panel{background:rgba(10,6,26,.9);border:2px solid var(--pu);border-radius:6px;padding:18px 22px;
+  box-shadow:0 0 18px rgba(168,85,247,.55),inset 0 0 24px rgba(168,85,247,.14)}
+h2{font-family:var(--pf);font-size:15px;color:var(--cy);text-shadow:0 0 10px var(--cy);margin-bottom:12px;letter-spacing:1px}
+h3{font-family:var(--pf);font-size:11px;color:var(--yl);text-shadow:0 0 8px rgba(255,210,63,.7);margin-bottom:10px}
+.lead{font-size:15px;color:#cfd3ff;line-height:1.45;margin-bottom:12px}
+.row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.hidden{display:none!important}
+
+/* ---------- focusable items ---------- */
+.nav{position:relative;cursor:pointer;font-family:var(--pf);font-size:12px;color:var(--tx);
+  padding:12px 16px;border:2px solid rgba(138,143,191,.35);border-radius:6px;background:rgba(20,12,40,.75);
+  transition:transform .12s,border-color .12s,box-shadow .12s;text-align:center;line-height:1.4}
+.nav.focus{border-color:var(--cy);box-shadow:0 0 14px var(--cy),inset 0 0 10px rgba(34,230,255,.25);transform:scale(1.04);
+  animation:pulse 1.2s infinite}
+.nav.sel{background:var(--rainbow);background-size:200% auto;animation:rainbow 3s linear infinite;color:#fff;
+  text-shadow:0 1px 2px #000;border-color:#fff}
+.nav.sel.focus{animation:rainbow 3s linear infinite;box-shadow:0 0 18px #fff}
+.nav.off{opacity:.38}
+.nav.primary{border-color:var(--gr);color:var(--gr)}
+.nav.primary.focus{box-shadow:0 0 16px var(--gr);border-color:var(--gr)}
+.nav.shake{animation:nshake .3s}
+@keyframes nshake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+/* ---------- main menu ---------- */
+#scr-menu{align-items:flex-start;padding-left:64px}
+.logo{font-family:var(--pf);font-size:46px;line-height:1.1;background:var(--rainbow);background-size:200% auto;
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:rainbow 3s linear infinite;
+  filter:drop-shadow(0 0 10px rgba(168,85,247,.8)) drop-shadow(3px 3px 0 #1a0838)}
+.logo-sub{font-family:var(--pf);font-size:13px;color:var(--yl);text-shadow:0 0 10px var(--or);margin:14px 0 26px;letter-spacing:1px}
+.menu{display:flex;flex-direction:column;gap:9px;width:330px}
+.menu .nav{text-align:left;font-size:11px;padding:10px 14px}
+.menu .nav.focus::before{content:"▶";position:absolute;left:-22px;top:50%;transform:translateY(-50%);color:var(--cy);
+  text-shadow:0 0 8px var(--cy);animation:blink .8s steps(1) infinite}
+.menu .val{float:right;color:var(--yl)}
+.foot{font-family:var(--pf);font-size:8px;color:var(--dim);margin-top:20px;line-height:1.9}
+.credit{position:absolute;right:20px;bottom:14px;font-family:var(--pf);font-size:8px;color:var(--dim)}
+.pad{position:absolute;right:20px;top:16px;font-family:var(--pf);font-size:8px;color:var(--dim);text-align:right}
+.pad.ok{color:var(--gr);text-shadow:0 0 6px var(--gr)}
+
+/* ---------- intro (profile) ---------- */
+.intro{width:760px;text-align:center}
+.lbl2{font-family:var(--pf);font-size:10px;color:var(--yl);margin:14px 0 10px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.grid6{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+.intro .row{margin-top:20px}
+.intro .nav{font-size:11px}
+
+/* ---------- help ---------- */
+.help-wrap{display:flex;gap:16px;width:900px}
+.help-wrap .panel{flex:1}
+table.keys{width:100%;border-collapse:collapse;font-size:14px}
+table.keys th{font-family:var(--pf);font-size:8px;color:var(--dim);text-align:left;padding:4px 6px;border-bottom:1px solid rgba(138,143,191,.3)}
+table.keys td{padding:6px;border-bottom:1px solid rgba(138,143,191,.12);color:#d9dcff}
+kbd{font-family:var(--pf);font-size:8px;color:var(--cy);border:1px solid rgba(34,230,255,.5);border-radius:3px;padding:3px 5px;
+  background:rgba(34,230,255,.08);white-space:nowrap}
+.legend{display:flex;flex-direction:column;gap:7px}
+.lg{display:flex;align-items:center;gap:12px;font-size:14px;line-height:1.3;color:#d9dcff}
+.lg canvas{width:40px;height:40px;image-rendering:pixelated;flex:none}
+.lg b{color:var(--yl);font-weight:700}
+.note{font-size:13px;color:var(--dim);margin-top:10px;line-height:1.4}
+
+/* ---------- model ---------- */
+.model{width:900px}
+.formula{font-family:var(--pf);font-size:11px;color:var(--gr);text-align:center;margin:6px 0 12px;text-shadow:0 0 8px rgba(43,255,136,.6);line-height:1.8}
+.hm{display:grid;grid-template-columns:190px repeat(20,1fr);gap:3px;align-items:center}
+.hm .rl{font-size:13px;font-weight:700;color:#d9dcff;padding-right:6px}
+.hm .cn{font-family:var(--pf);font-size:7px;color:var(--dim);text-align:center}
+.hm .cell{height:26px;padding:0;border-radius:3px;border:1px solid rgba(34,230,255,.25);font-size:0}
+.hm .cell.focus{transform:scale(1.3);z-index:2;border-color:#fff;outline:2px solid var(--yl);animation:none}
+.hm-info{min-height:52px;margin-top:12px;font-size:14px;line-height:1.45;color:#d9dcff;border-left:3px solid var(--cy);padding:4px 10px;background:rgba(0,0,0,.35)}
+.hm-info b{color:var(--yl)}
+
+/* ---------- scores ---------- */
+.scores{width:640px}
+table.sc{width:100%;border-collapse:collapse;font-family:var(--pf);font-size:11px}
+table.sc td{padding:7px 8px;border-bottom:1px solid rgba(138,143,191,.15)}
+table.sc tr:nth-child(1) td{color:var(--yl);text-shadow:0 0 8px var(--or)}
+table.sc tr:nth-child(2) td{color:var(--cy)}
+table.sc tr:nth-child(3) td{color:var(--mg)}
+table.sc td.r{text-align:right}
+table.sc td.d{font-family:var(--bf);font-size:13px;color:var(--dim)}
+table.sc tr.me td{background:rgba(43,255,136,.12)}
+.empty{font-size:15px;color:var(--dim);text-align:center;padding:30px}
+
+/* ---------- pause ---------- */
+.big{font-family:var(--pf);font-size:34px;color:var(--mg);text-shadow:0 0 14px var(--mg),3px 3px 0 #1a0838;margin-bottom:18px}
+
+/* ---------- name entry ---------- */
+.slots{display:flex;justify-content:center;gap:12px;margin:14px 0}
+.slot{font-family:var(--pf);font-size:32px;width:58px;height:66px;display:flex;align-items:center;justify-content:center;
+  border:2px solid rgba(138,143,191,.4);border-radius:4px;background:rgba(0,0,0,.45);color:#fff}
+.slot.on{border-color:var(--cy);color:var(--cy);box-shadow:0 0 14px var(--cy);animation:pulse 1s infinite}
+.nb-t{font-family:var(--pf);font-size:11px;color:var(--yl);animation:blink 1s steps(1) infinite;margin-top:10px}
+.hint{font-family:var(--pf);font-size:8px;color:var(--dim);line-height:2}
+.stat{font-family:var(--pf);font-size:11px;color:#d9dcff;line-height:2}
+.stat b{color:var(--gr)}
+
+/* ---------- results ---------- */
+.res-title{font-family:var(--pf);font-size:28px;background:var(--rainbow);background-size:200% auto;-webkit-background-clip:text;
+  background-clip:text;-webkit-text-fill-color:transparent;animation:rainbow 3s linear infinite;margin-bottom:8px;
+  filter:drop-shadow(0 0 8px rgba(168,85,247,.8))}
+.res-sub{font-size:15px;color:#cfd3ff;margin-bottom:14px}
+.res-wrap{display:flex;gap:16px;width:900px;margin-bottom:14px}
+.res-list{flex:1.15;display:flex;flex-direction:column;gap:10px}
+.res-item{display:flex;justify-content:space-between;align-items:center;overflow:hidden;padding:14px 16px;text-align:left}
+.res-bg{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,#a855f7,#ec4899,#f97316,#eab308);opacity:.32;transition:width 1s ease}
+.res-name{position:relative;font-family:var(--bf);font-size:17px;font-weight:700}
+.res-pc{position:relative;font-family:var(--pf);font-size:16px;color:var(--yl);text-shadow:0 0 8px var(--or)}
+.res-item .rk{font-family:var(--pf);font-size:9px;color:var(--dim);margin-right:8px}
+.why{flex:1;font-size:14px;line-height:1.45;color:#d9dcff}
+.why li{list-style:none;display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px dashed rgba(138,143,191,.25)}
+.why li b{font-family:var(--pf);font-size:10px;color:var(--gr);white-space:nowrap}
+.why .sc{font-family:var(--pf);font-size:10px;color:var(--dim);margin-top:10px}
+.why .sc b{color:var(--yl)}
+
+/* ---------- in-game HUD ---------- */
+#hud{position:absolute;left:0;right:0;top:0;height:44px;z-index:12;display:flex;justify-content:space-between;align-items:flex-start;
+  padding:8px 14px;pointer-events:none;font-family:var(--pf)}
+#hud .lbl{font-size:7px;color:var(--dim);margin-bottom:4px}
+#hScore{font-size:14px;color:var(--yl);text-shadow:0 0 8px var(--or)}
+#hCombo{font-size:14px;color:var(--mg);text-shadow:0 0 8px var(--mg)}
+#hud .c{text-align:center}
+#hud .r{text-align:right}
+#hDots{display:flex;gap:3px;justify-content:center}
+#hDots i{width:10px;height:10px;border:1px solid rgba(34,230,255,.45);display:block}
+#hDots i.done{background:var(--cy);box-shadow:0 0 6px var(--cy)}
+#hDots i.now{border-color:var(--yl);background:rgba(255,210,63,.4);animation:blink .6s steps(1) infinite}
+#hPow{font-size:7px;color:var(--yl);margin-top:5px;min-height:8px}
+#qpanel{position:absolute;left:50%;top:54px;width:780px;transform:translateX(-50%) translateY(-20px);opacity:0;z-index:14;
+  text-align:center;pointer-events:none;transition:opacity .3s,transform .3s;padding:12px 20px 10px;
+  background:rgba(8,4,22,.86);border:2px solid var(--cy);border-radius:6px;box-shadow:0 0 18px rgba(34,230,255,.5),inset 0 0 18px rgba(34,230,255,.12)}
+#qpanel.on{opacity:1;transform:translateX(-50%)}
+#qNum{font-family:var(--pf);font-size:9px;color:var(--cy);margin-bottom:8px}
+#qText{font-size:23px;font-weight:700;line-height:1.3;min-height:60px;display:flex;align-items:center;justify-content:center;text-shadow:0 0 10px rgba(168,85,247,.7)}
+#qHint{font-family:var(--pf);font-size:8px;color:var(--dim);margin-top:6px}
+#qHint .n{color:var(--rd)}#qHint .y{color:var(--gr)}
+#banner{position:absolute;left:0;right:0;top:220px;z-index:13;text-align:center;font-family:var(--pf);font-size:18px;color:#fff;
+  text-shadow:0 0 12px var(--mg),0 0 24px var(--pu);opacity:0;pointer-events:none;transition:opacity .25s}
+#banner.on{opacity:1}
+#banner small{display:block;font-size:9px;color:var(--yl);margin-top:10px;text-shadow:0 0 8px var(--or)}
+#toast{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);z-index:70;font-family:var(--pf);font-size:9px;line-height:1.7;
+  color:#fff;background:rgba(10,6,26,.95);border:2px solid var(--yl);border-radius:5px;padding:10px 14px;max-width:820px;text-align:center;
+  box-shadow:0 0 14px rgba(255,210,63,.5);opacity:0;pointer-events:none;transition:opacity .3s}
+#toast.on{opacity:1}
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="game" width="960" height="540"></canvas>
+
+  <!-- ===== HUD ===== -->
+  <div id="hud" class="hidden">
+    <div><div class="lbl">SCORE</div><div id="hScore">000000</div></div>
+    <div class="c"><div class="lbl" id="hQ">ПИТАННЯ 01 / 20</div><div id="hDots"></div></div>
+    <div class="r"><div class="lbl">COMBO</div><div id="hCombo">x1</div><div id="hPow"></div></div>
+  </div>
+  <div id="qpanel">
+    <div id="qNum">ПИТАННЯ 01 / 20</div>
+    <div id="qText"></div>
+    <div id="qHint">ЛЕТИ В ПОРТАЛ: <span class="n">◀ НІ</span> · <span class="y">ТАК ▶</span></div>
+  </div>
+  <div id="banner"></div>
+
+  <!-- ===== MAIN MENU ===== -->
+  <section class="screen" id="scr-menu" data-wrap="1">
+    <div class="logo">CAREER<br>BOT</div>
+    <div class="logo-sub">ЯКИЙ ТИ ПОЛІТЕХНІК?</div>
+    <div class="menu">
+      <div class="nav" data-act="play">ГРАТИ</div>
+      <div class="nav" data-act="help">ЯК ГРАТИ</div>
+      <div class="nav" data-act="model">ЯК ПРАЦЮЄ ПРОГНОЗ</div>
+      <div class="nav" data-act="scores">РЕКОРДИ</div>
+      <div class="nav" data-act="toggle:sound">ЗВУК <span class="val" data-set="sound"></span></div>
+      <div class="nav" data-act="toggle:fast">ТЕМП <span class="val" data-set="fast"></span></div>
+    </div>
+    <div class="foot">W/S · D-PAD — ВИБІР &nbsp; SPACE · (A) — OK &nbsp; ESC · (B) — НАЗАД</div>
+    <div class="pad" id="padStatus">ГЕЙМПАД НЕ ЗНАЙДЕНО<br>НАТИСНИ БУДЬ-ЯКУ КНОПКУ НА НЬОМУ</div>
+    <div class="credit">НТУ «ХПІ» · STEM INNOVATION CAMPUS</div>
+  </section>
+
+  <!-- ===== PROFILE ===== -->
+  <section class="screen shade" id="scr-intro" data-back="menu">
+    <div class="panel intro">
+      <h2>ПРОФІЛЬ ПІЛОТА</h2>
+      <p class="lead">Дві відповіді для анонімної статистики, далі — 20 питань у польоті.</p>
+      <div class="lbl2">ТВОЯ СТАТЬ</div>
+      <div class="grid3">
+        <div class="nav" data-act="g:male">ЧОЛОВІЧА</div>
+        <div class="nav" data-act="g:female">ЖІНОЧА</div>
+        <div class="nav" data-act="g:prefer-not">НЕ ВКАЗУВАТИ</div>
+      </div>
+      <div class="lbl2">СКІЛЬКИ ТОБІ РОКІВ?</div>
+      <div class="grid6">
+        <div class="nav" data-act="a:5-12">5–12</div>
+        <div class="nav" data-act="a:13-19">13–19</div>
+        <div class="nav" data-act="a:18-29">18–29</div>
+        <div class="nav" data-act="a:30-44">30–44</div>
+        <div class="nav" data-act="a:45-64">45–64</div>
+        <div class="nav" data-act="a:65+">65+</div>
+      </div>
+      <div class="row">
+        <div class="nav" data-act="menu">◀ НАЗАД</div>
+        <div class="nav primary off" id="startBtn" data-act="start">СТАРТ МІСІЇ ▶</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== HELP ===== -->
+  <section class="screen shade" id="scr-help" data-back="menu">
+    <div class="help-wrap">
+      <div class="panel">
+        <h2>КЕРУВАННЯ</h2>
+        <table class="keys">
+          <tr><th>ДІЯ</th><th>КЛАВІАТУРА</th><th>ГЕЙМПАД</th></tr>
+          <tr><td>Політ</td><td><kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd></td><td><kbd>L-STICK</kbd> <kbd>D-PAD</kbd></td></tr>
+          <tr><td>Лазер</td><td><kbd>SPACE</kbd></td><td><kbd>A</kbd> <kbd>X</kbd> <kbd>RT</kbd></td></tr>
+          <tr><td>Пауза</td><td><kbd>ESC</kbd> <kbd>P</kbd></td><td><kbd>START</kbd></td></tr>
+          <tr><td>Меню: вибір</td><td><kbd>W</kbd><kbd>S</kbd><kbd>A</kbd><kbd>D</kbd></td><td><kbd>D-PAD</kbd></td></tr>
+          <tr><td>Меню: OK</td><td><kbd>SPACE</kbd></td><td><kbd>A</kbd> <kbd>START</kbd></td></tr>
+          <tr><td>Назад</td><td><kbd>ESC</kbd></td><td><kbd>B</kbd></td></tr>
+        </table>
+        <p class="note">Стрілки та Enter теж працюють. На сенсорному екрані веди пальцем — лазер стріляє сам.</p>
+      </div>
+      <div class="panel">
+        <h2>МІСІЯ</h2>
+        <div class="legend">
+          <div class="lg"><canvas data-spr="star"></canvas><div><b>Зірка</b> — +10 очок, кожні 5 поспіль піднімають комбо до x5.</div></div>
+          <div class="lg"><canvas data-spr="bug"></canvas><div><b>Баг</b> — збий лазером (+25). Зіткнення скидає комбо і знімає 50 очок.</div></div>
+          <div class="lg"><canvas data-spr="rock"></canvas><div><b>Астероїд</b> — великі витримують два постріли.</div></div>
+          <div class="lg"><canvas data-spr="bulb"></canvas><div><b>Ідея</b> — 8 секунд потрійного лазера і магніту для зірок.</div></div>
+          <div class="lg"><canvas data-spr="portal"></canvas><div><b>Портали ТАК / НІ</b> — після кожної хвилі з’являється питання. Залети в портал з відповіддю.</div></div>
+        </div>
+        <p class="note">Обидва портали дають однакові +100 очок, тож відповідай чесно: від цього залежить прогноз.</p>
+      </div>
+    </div>
+    <div class="row" style="margin-top:14px"><div class="nav" data-act="menu">◀ НАЗАД</div></div>
+  </section>
+
+  <!-- ===== MODEL ===== -->
+  <section class="screen shade" id="scr-model" data-back="menu">
+    <div class="panel model">
+      <h2>ЯК ПРАЦЮЄ ПРОГНОЗ</h2>
+      <p class="lead">Кожна відповідь стає числом: ТАК = 1, НІ = 0. Для кожного з чотирьох напрямів є 20 ваг, які показують, наскільки питання важливе саме для нього. Ваги одного напряму в сумі дають 1, тому відповідь ТАК на всі питання дала б 100% кожному напряму. Це лінійна модель — зважена сума, та сама ідея, з якої починається перцептрон.</p>
+      <div class="formula">ВІДСОТОК = ОКРУГЛ( 100 × Σ ВАГАᵢ × ВІДПОВІДЬᵢ )</div>
+      <div class="hm" id="heat"></div>
+      <div class="hm-info" id="heatInfo">Наведи курсор або пройдися D-PAD / WASD по клітинках: чим яскравіша клітинка, тим більша вага.</div>
+    </div>
+    <div class="row" style="margin-top:12px"><div class="nav" data-act="menu">◀ НАЗАД</div></div>
+  </section>
+
+  <!-- ===== SCORES ===== -->
+  <section class="screen shade" id="scr-scores" data-back="scoresBack">
+    <div class="panel scores">
+      <h2>ТОП-10 ПІЛОТІВ</h2>
+      <div id="scoreTable"></div>
+    </div>
+    <div class="row" style="margin-top:14px">
+      <div class="nav" data-act="scoresBack">◀ НАЗАД</div>
+    </div>
+  </section>
+
+  <!-- ===== PAUSE ===== -->
+  <section class="screen shade" id="scr-pause" data-back="resume">
+    <div class="big">ПАУЗА</div>
+    <div class="menu" style="width:300px">
+      <div class="nav" data-act="resume">ПРОДОВЖИТИ</div>
+      <div class="nav" data-act="restart">ПОЧАТИ ЗАНОВО</div>
+      <div class="nav" data-act="menu">ВИЙТИ В МЕНЮ</div>
+    </div>
+    <div class="foot" style="text-align:center">НЕЗАВЕРШЕНИЙ ТЕСТ НЕ ЗБЕРІГАЄТЬСЯ В СТАТИСТИКУ</div>
+  </section>
+
+  <!-- ===== NAME ENTRY ===== -->
+  <section class="screen shade" id="scr-name">
+    <div class="panel" style="text-align:center;width:560px">
+      <div class="big" style="font-size:24px;color:var(--gr);text-shadow:0 0 14px var(--gr),3px 3px 0 #0b2a1a">МІСІЮ ВИКОНАНО</div>
+      <div class="stat">РАХУНОК <b id="nmScore">0</b> · МІСЦЕ <b id="nmRank">#1</b></div>
+      <div class="nb-t">НОВИЙ РЕКОРД! ВВЕДИ ІНІЦІАЛИ</div>
+      <div class="slots"><div class="slot" id="sl0">A</div><div class="slot" id="sl1">A</div><div class="slot" id="sl2">A</div></div>
+      <div class="hint">W/S · ↑↓ · D-PAD — ЛІТЕРА<br>A/D · ←→ — ПОЗИЦІЯ &nbsp; SPACE · (A) — ДАЛІ</div>
+    </div>
+  </section>
+
+  <!-- ===== RESULTS ===== -->
+  <section class="screen shade" id="scr-results" data-back="menu">
+    <div class="res-title">ХПІ ЧЕКАЄ НА ТЕБЕ!</div>
+    <div class="res-sub">Обери напрям, щоб відкрити сторінку вступу</div>
+    <div class="res-wrap">
+      <div class="res-list" id="resList"></div>
+      <div class="panel why">
+        <h3>ЧОМУ ТАК?</h3>
+        <div id="whyBox"></div>
+        <div class="sc">РАХУНОК <b id="resScore">0</b></div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="nav" data-act="newPilot">↻ НОВИЙ ПІЛОТ</div>
+      <div class="nav" data-act="scores">★ РЕКОРДИ</div>
+      <div class="nav" data-act="menu">◀ МЕНЮ</div>
+    </div>
+  </section>
+
+  <div id="toast"></div>
+  <div id="crt"></div>
+</div>
+
+<script>
+'use strict';
+(function () {
+
+const W = 960, H = 540, HORIZON = 420;
+const $ = id => document.getElementById(id);
+const stage = $('stage'), cv = $('game'), ctx = cv.getContext('2d');
+const rnd = (a, b) => a + Math.random() * (b - a);
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+
+/* =====================================================================
+   1. DATA — питання та напрями (зміст і порядок як у data.js)
+   ===================================================================== */
+const cards = [
+  { text: 'Тобі подобається читати, писати тексти або вивчати мови?', short: 'Тексти та мови' },
+  { text: 'Тобі цікаво, як влаштовані механізми та пристрої?', short: 'Механізми й пристрої' },
+  { text: 'Тобі подобається організовувати заходи чи керувати проєктами?', short: 'Заходи та проєкти' },
+  { text: 'Тобі подобається вирішувати логічні задачі та головоломки?', short: 'Логічні задачі' },
+  { text: 'Тобі легко спілкуватися з різними людьми та домовлятися?', short: 'Спілкування' },
+  { text: 'Ти любиш щось конструювати, збирати чи ремонтувати своїми руками?', short: 'Робота руками' },
+  { text: 'Тобі подобається розбиратися, як працюють додатки та ігри?', short: 'Як працюють додатки' },
+  { text: 'Ти легко розумієш почуття інших людей і любиш допомагати?', short: 'Емпатія' },
+  { text: 'Тебе цікавить, як заробляють гроші компанії та бренди?', short: 'Як заробляють компанії' },
+  { text: 'Тобі подобаються точні науки: фізика, математика, креслення?', short: 'Точні науки' },
+  { text: 'Тобі важливо робити світ кращим і допомагати іншим?', short: 'Робити світ кращим' },
+  { text: 'Ти легко вчишся користуватися новими програмами чи гаджетами?', short: 'Нові програми й гаджети' },
+  { text: 'Ти мрієш відкрити власний бізнес або стартап?', short: 'Власний бізнес' },
+  { text: 'Тобі б хотілось винаходити нові технології чи покращувати існуючі?', short: 'Нові технології' },
+  { text: 'Тебе цікавлять історія, психологія, культура чи суспільство?', short: 'Історія, культура' },
+  { text: 'Тебе цікавить створення сайтів, ботів або мобільних додатків?', short: 'Сайти, боти, додатки' },
+  { text: 'Ти вмієш переконувати людей та знаходити вигідні рішення?', short: 'Переконання' },
+  { text: 'Тебе приваблює робота на виробництві, в лабораторії чи на будівництві?', short: 'Виробництво, лабораторія' },
+  { text: 'Тобі б хотілось працювати за компʼютером більшість часу?', short: 'Робота за компʼютером' },
+  { text: 'Тобі б хотілось працювати з людьми: навчати, консультувати, лікувати?', short: 'Робота з людьми' }
+];
+
+const educationDirections = [
+  { id: 1, name: 'ІТ-освіта', url: 'https://vstup.kpi.kharkov.ua/admission/it-osvita/' },
+  { id: 2, name: 'Інженерно-технічна освіта', url: 'https://vstup.kpi.kharkov.ua/admission/engineering/' },
+  { id: 3, name: 'Бізнес-освіта', url: 'https://vstup.kpi.kharkov.ua/admission/biznes-osvita/' },
+  { id: 4, name: 'Соціально-гуманітарна освіта', url: 'https://vstup.kpi.kharkov.ua/admission/humanitarna-osvita/' }
+];
+
+/* =====================================================================
+   2. MODEL — без змін відносно calculator.js
+   ===================================================================== */
+class ResultsCalculator {
+  constructor() {
+    this.model = [
+      { id: 1, weights: [0.0173, 0.0657, 0.0440, 0.1299, 0.0289, 0.0334, 0.1049, 0.0109, 0.0209, 0.0882, 0.0079, 0.0757, 0.0247, 0.0574, 0.0051, 0.1799, 0.0140, 0.0025, 0.0502, 0.0384] },
+      { id: 2, weights: [0.0079, 0.1799, 0.0440, 0.1049, 0.0209, 0.1299, 0.0384, 0.0051, 0.0140, 0.0882, 0.0173, 0.0574, 0.0247, 0.0757, 0.0025, 0.0334, 0.0109, 0.0657, 0.0289, 0.0502] },
+      { id: 3, weights: [0.0440, 0.0079, 0.1299, 0.0574, 0.1049, 0.0025, 0.0173, 0.0384, 0.1799, 0.0334, 0.0209, 0.0289, 0.0882, 0.0140, 0.0247, 0.0109, 0.0757, 0.0051, 0.0502, 0.0657] },
+      { id: 4, weights: [0.1299, 0.0051, 0.0440, 0.0247, 0.0657, 0.0025, 0.0079, 0.1049, 0.0140, 0.0109, 0.0882, 0.0173, 0.0209, 0.0289, 0.1799, 0.0334, 0.0502, 0.0384, 0.0574, 0.0757] }
+    ];
+  }
+  calculatePercentages(swipes) {
+    const probabilities = this.model.map(category => {
+      let weightedSum = 0;
+      for (let i = 0; i < swipes.length; i++) weightedSum += category.weights[i] * swipes[i];
+      return { id: category.id, probability: weightedSum };
+    });
+    return probabilities.map(item => ({ id: item.id, percentage: Math.round(item.probability * 100) }));
+  }
+}
+const resultsCalculator = new ResultsCalculator();
+
+/* =====================================================================
+   3. BUCKET — та сама колекція, що читає admin.html
+   ===================================================================== */
+class LocalStorageCollection {
+  constructor(collectionName) { this.collectionName = collectionName; }
+  addNew(item) {
+    const items = this.getAll();
+    const id = this._generateId(items);
+    const newItem = { id, ...item, createdAt: new Date().toISOString() };
+    items.push(newItem);
+    this._save(items);
+    return newItem;
+  }
+  getAll() {
+    try { const data = localStorage.getItem(this.collectionName); return data ? JSON.parse(data) : []; }
+    catch (e) { return []; }
+  }
+  _save(items) { try { localStorage.setItem(this.collectionName, JSON.stringify(items)); } catch (e) {} }
+  _generateId(items) { return items.length === 0 ? 1 : Math.max(...items.map(item => item.id)) + 1; }
+}
+const jsonBucket = new LocalStorageCollection('khpi-career-advisor');
+
+/* рекорди й налаштування — об'єкти, а не масиви, тож admin.html їх не показує як колекції */
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+};
+const SCORE_KEY = 'khpi-career-arcade-scores', SET_KEY = 'khpi-career-arcade-settings';
+const settings = Object.assign({ sound: true, fast: false }, store.get(SET_KEY, {}));
+
+/* =====================================================================
+   4. SPRITES
+   ===================================================================== */
+const PAL = { K: '#1a1030', W: '#f2f4ff', G: '#8d96c4', D: '#0d1436', C: '#3cf0ff', O: '#ff9a1f', Y: '#ffe14d',
+  B: '#3b6cff', M: '#b84dff', P: '#ff3df0', E: '#ffffff', L: '#c9a400', R: '#ff4458' };
+function makeSprite(rows) {
+  const h = rows.length, w = rows[0].length, c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  const x = c.getContext('2d');
+  rows.forEach((r, j) => { for (let i = 0; i < w; i++) { const ch = r[i]; if (ch === '.') continue; x.fillStyle = PAL[ch]; x.fillRect(i, j, 1, 1); } });
+  return c;
+}
+const ROBOT = [
+  '......YYYY......',
+  '.......KK.......',
+  '...KKKKKKKKKK...',
+  '..KWWWWWWWWWWK..',
+  '.OKWDDDDDDDDWKO.',
+  '.OKWDCCDDCCDWKO.',
+  '.OKWDCCDDCCDWKO.',
+  '.OKWDDDDDDDDWKO.',
+  '..KWDDDCCDDDWK..',
+  '..KWWWWWWWWWWK..',
+  '...KKKKKKKKKK...',
+  '....KWWBBWWK....',
+  '...KWWBBBBWWK...',
+  '...KWWWBBWWWK...',
+  '....KGGKKGGK....',
+  '....OO....OO....'
+];
+const ROBOT_BLINK = ROBOT.slice();
+ROBOT_BLINK[5] = '.OKWDDDDDDDDWKO.';
+ROBOT_BLINK[6] = '.OKWDCCDDCCDWKO.';
+const BUG_A = [
+  '..K......K..', '...K....K...', '..MMMMMMMM..', '.MMEMMMMEMM.', '.MMKMMMMKMM.', 'MMMMMMMMMMMM',
+  'M.MMMMMMMM.M', 'M.MPMMMMPM.M', '..M.M..M.M..', '.M..M..M..M.'
+];
+const BUG_B = BUG_A.slice(0, 8).concat(['..M.M..M.M..', 'M..M....M..M']);
+const STAR = ['....Y....', '....Y....', '...YYY...', 'YYYYEYYYY', '.YYEEEYY.', '..YYEYY..', '..YY.YY..', '.YY...YY.', 'Y.......Y'];
+const BULB = ['..YYYYY..', '.YYEEYYY.', 'YYEEYYYYY', 'YYEYYYYYY', 'YYYYYYYYY', '.YYYYYYY.', '..YYYYY..', '...YLY...',
+  '..GGGGG..', '..KGKGK..', '..GGGGG..', '...GGG...'];
+const SPR = { robot: makeSprite(ROBOT), blink: makeSprite(ROBOT_BLINK), bugA: makeSprite(BUG_A), bugB: makeSprite(BUG_B),
+  star: makeSprite(STAR), bulb: makeSprite(BULB) };
+
+function makeAsteroid() {
+  const n = 18, c = document.createElement('canvas'); c.width = c.height = n;
+  const x = c.getContext('2d'); const pts = 11;
+  x.beginPath();
+  for (let i = 0; i < pts; i++) {
+    const a = i / pts * Math.PI * 2, r = rnd(6, 8.6);
+    const px = n / 2 + Math.cos(a) * r, py = n / 2 + Math.sin(a) * r;
+    i ? x.lineTo(px, py) : x.moveTo(px, py);
+  }
+  x.closePath(); x.fillStyle = '#5b4a82'; x.fill();
+  x.globalCompositeOperation = 'source-atop';
+  x.fillStyle = '#8f7bc4'; x.fillRect(0, 0, n, 6); x.fillRect(0, 0, 6, n);
+  x.fillStyle = '#3a2c5c'; x.fillRect(0, n - 5, n, 5); x.fillRect(n - 5, 0, 5, n);
+  for (let k = 0; k < 3; k++) { x.fillStyle = '#2c2148'; const cx = rnd(5, 12) | 0, cy = rnd(5, 12) | 0; x.fillRect(cx, cy, 2, 2); x.fillStyle = '#a996dc'; x.fillRect(cx, cy - 1, 2, 1); }
+  const d = x.getImageData(0, 0, n, n);
+  for (let i = 3; i < d.data.length; i += 4) d.data[i] = d.data[i] > 120 ? 255 : 0;
+  x.putImageData(d, 0, 0);
+  return c;
+}
+const ROCKS = [makeAsteroid(), makeAsteroid(), makeAsteroid(), makeAsteroid()];
+
+/* ---------- background layers ---------- */
+const neb = document.createElement('canvas'); neb.width = 240; neb.height = 270;
+(() => {
+  const nx = neb.getContext('2d');
+  const cols = ['168,85,247', '255,61,240', '34,230,255', '59,108,255', '255,154,31'];
+  for (let i = 0; i < 16; i++) {
+    const x = Math.random() * 240, y = Math.random() * 270, r = rnd(30, 80), c = cols[i % cols.length], a = rnd(.1, .22);
+    for (const oy of [-270, 0, 270]) {
+      const g = nx.createRadialGradient(x, y + oy, 0, x, y + oy, r);
+      g.addColorStop(0, `rgba(${c},${a})`); g.addColorStop(1, `rgba(${c},0)`);
+      nx.fillStyle = g; nx.fillRect(x - r, y + oy - r, 2 * r, 2 * r);
+    }
+  }
+})();
+const sky = document.createElement('canvas'); sky.width = 240; sky.height = 26;
+(() => {
+  const s = sky.getContext('2d'); let x = 0;
+  while (x < 240) {
+    const w = (rnd(5, 14)) | 0, h = (rnd(6, 22)) | 0;
+    s.fillStyle = '#12052a'; s.fillRect(x, 26 - h, w, h);
+    s.fillStyle = '#2b0f52'; s.fillRect(x, 26 - h, w, 1);
+    for (let yy = 26 - h + 2; yy < 25; yy += 2) for (let xx = x + 1; xx < x + w - 1; xx += 2)
+      if (Math.random() < .22) { s.fillStyle = Math.random() < .7 ? 'rgba(255,210,63,.85)' : 'rgba(34,230,255,.85)'; s.fillRect(xx, yy, 1, 1); }
+    x += w + ((Math.random() * 2) | 0);
+  }
+  s.fillStyle = '#12052a'; s.fillRect(118, 2, 6, 24); s.fillRect(120, 0, 2, 2);
+  s.fillStyle = '#ff3df0'; s.fillRect(120, 0, 2, 1);
+})();
+const sun = document.createElement('canvas'); sun.width = 60; sun.height = 30;
+(() => {
+  const s = sun.getContext('2d');
+  const g = s.createLinearGradient(0, 0, 0, 30); g.addColorStop(0, '#ffd23f'); g.addColorStop(.55, '#ff7a3d'); g.addColorStop(1, '#ff3df0');
+  s.fillStyle = g; s.beginPath(); s.arc(30, 30, 29, Math.PI, 0); s.fill();
+  s.globalCompositeOperation = 'destination-out';
+  [[16, 1], [20, 1], [23, 2], [26, 2]].forEach(([y, h]) => s.fillRect(0, y, 60, h));
+})();
+const planet = document.createElement('canvas'); planet.width = 44; planet.height = 30;
+(() => {
+  const p = planet.getContext('2d');
+  p.fillStyle = '#3b6cff'; p.beginPath(); p.arc(22, 15, 11, 0, 7); p.fill();
+  p.globalCompositeOperation = 'source-atop';
+  p.fillStyle = '#6a8cff'; p.fillRect(0, 7, 44, 3); p.fillStyle = '#2440a8'; p.fillRect(0, 17, 44, 4); p.fillStyle = '#1b2f7a'; p.fillRect(24, 0, 20, 30);
+  p.globalCompositeOperation = 'source-over';
+  p.strokeStyle = '#ff9a1f'; p.lineWidth = 1.4; p.beginPath(); p.ellipse(22, 16, 21, 4, -.18, .15, Math.PI - .15); p.stroke();
+  const d = p.getImageData(0, 0, 44, 30); for (let i = 3; i < d.data.length; i += 4) d.data[i] = d.data[i] > 100 ? 255 : 0; p.putImageData(d, 0, 0);
+})();
+const starLayers = [[], [], []].map((l, k) => {
+  for (let i = 0; i < [70, 45, 22][k]; i++) l.push({ x: Math.random() * W, y: Math.random() * HORIZON, tw: Math.random() * 6 });
+  return l;
+});
+const bg = { neb: 0, grid: 0, t: 0 };
+
+/* =====================================================================
+   5. AUDIO — чиптюн-ефекти на WebAudio
+   ===================================================================== */
+let AC = null;
+function ac() {
+  if (!settings.sound) return null;
+  if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } }
+  if (AC.state === 'suspended') AC.resume().catch(() => {});
+  return AC;
+}
+function tone(f, d, type = 'square', v = .06, f2 = null, delay = 0) {
+  const a = ac(); if (!a) return;
+  const t = a.currentTime + delay, o = a.createOscillator(), g = a.createGain();
+  o.type = type; o.frequency.setValueAtTime(f, t);
+  if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + d);
+  g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.0001, t + d);
+  o.connect(g).connect(a.destination); o.start(t); o.stop(t + d + .03);
+}
+function noise(d, v = .1) {
+  const a = ac(); if (!a) return;
+  const b = a.createBuffer(1, a.sampleRate * d, a.sampleRate), ch = b.getChannelData(0);
+  for (let i = 0; i < ch.length; i++) ch[i] = (Math.random() * 2 - 1) * (1 - i / ch.length);
+  const s = a.createBufferSource(), g = a.createGain(); s.buffer = b; g.gain.value = v;
+  s.connect(g).connect(a.destination); s.start();
+}
+const sfx = {
+  move: () => tone(620, .04, 'square', .03),
+  ok: () => { tone(523, .06, 'square', .05); tone(784, .09, 'square', .05, null, .06); },
+  back: () => tone(392, .08, 'square', .04, 262),
+  deny: () => tone(140, .15, 'sawtooth', .06),
+  shoot: () => tone(980, .06, 'square', .025, 420),
+  star: () => tone(1046, .07, 'triangle', .07, 1568),
+  boom: () => noise(.22, .12),
+  hit: () => { noise(.3, .16); tone(220, .3, 'sawtooth', .07, 55); },
+  power: () => [523, 659, 784, 1046].forEach((f, i) => tone(f, .09, 'square', .05, null, i * .06)),
+  portal: () => tone(220, .5, 'triangle', .06, 880),
+  choose: () => [784, 988, 1175].forEach((f, i) => tone(f, .1, 'square', .05, null, i * .07)),
+  finish: () => [523, 659, 784, 1046, 784, 1046].forEach((f, i) => tone(f, .14, 'square', .06, null, i * .11))
+};
+
+/* =====================================================================
+   6. SCREENS & NAVIGATION
+   ===================================================================== */
+let mode = 'ui';            // ui | play | paused
+let curScreen = null, navItems = [], navIdx = 0, scoresReturn = 'menu';
+let lastInput = performance.now();
+
+function hideAllScreens() { document.querySelectorAll('.screen').forEach(s => s.classList.remove('on')); curScreen = null; }
+function showScreen(id) {
+  hideAllScreens();
+  if (!id) return;
+  const el = $('scr-' + id);
+  if (!el) return;
+  el.classList.add('on'); curScreen = id;
+  if (id === 'menu') refreshSettings();
+  refreshNav();
+}
+function refreshNav(focusEl) {
+  const el = curScreen ? $('scr-' + curScreen) : null;
+  navItems = el ? [...el.querySelectorAll('.nav')].filter(n => !n.classList.contains('hidden')) : [];
+  let i = focusEl ? navItems.indexOf(focusEl) : -1;
+  if (i < 0) i = 0;
+  setFocus(i, true);
+}
+function setFocus(i, silent) {
+  document.querySelectorAll('.nav.focus').forEach(n => n.classList.remove('focus'));
+  navIdx = i;
+  const n = navItems[i];
+  if (!n) return;
+  n.classList.add('focus');
+  if (n.dataset.cell !== undefined) showCellInfo(n);
+  if (!silent) sfx.move();
+}
+function moveNav(dir) {
+  if (!navItems.length) return;
+  const cur = navItems[navIdx], r = cur.getBoundingClientRect();
+  const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  const v = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] }[dir];
+  let best = -1, bs = Infinity;
+  navItems.forEach((el, i) => {
+    if (i === navIdx) return;
+    const q = el.getBoundingClientRect();
+    const dx = q.left + q.width / 2 - cx, dy = q.top + q.height / 2 - cy;
+    const along = dx * v[0] + dy * v[1];
+    if (along <= 2) return;
+    const perp = Math.abs(dx * v[1] - dy * v[0]);
+    const s = along + perp * 2.2 + (perp > along ? 100000 : 0);   // спершу — у конусі 45°
+    if (s < bs) { bs = s; best = i; }
+  });
+  const wrap = curScreen && $('scr-' + curScreen).dataset.wrap;
+  if (best < 0 && wrap) {
+    if (dir === 'down') best = 0;
+    if (dir === 'up') best = navItems.length - 1;
+  }
+  if (best >= 0) setFocus(best);
+}
+function activate(el) {
+  if (!el) return;
+  const act = el.dataset.act || '';
+  if (el.classList.contains('off')) { el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); sfx.deny(); return; }
+  sfx.ok();
+  doAction(act, el);
+}
+function goBack() {
+  const el = curScreen ? $('scr-' + curScreen) : null;
+  const b = el && el.dataset.back;
+  if (!b) return;
+  sfx.back();
+  doAction(b);
+}
+
+function doAction(act, el) {
+  const [a, arg] = act.split(':');
+  switch (a) {
+    case 'play': resetProfile(); showScreen('intro'); break;
+    case 'menu': toMenu(); break;
+    case 'help': showScreen('help'); break;
+    case 'model': showScreen('model'); break;
+    case 'scores': scoresReturn = curScreen === 'results' ? 'results' : 'menu'; buildScores(); showScreen('scores'); break;
+    case 'scoresBack': showScreen(scoresReturn); break;
+    case 'toggle': settings[arg] = !settings[arg]; store.set(SET_KEY, settings); refreshSettings(); if (arg === 'sound' && settings.sound) sfx.ok(); break;
+    case 'g': profile.gender = act.slice(2); markSel('g', el); jumpTo('[data-act^="a:"]', '.sel'); break;
+    case 'a': profile.age = act.slice(2); markSel('a', el); updateStart(); if (profile.gender) jumpTo('#startBtn'); break;
+    case 'start': newGame(); break;
+    case 'resume': resume(); break;
+    case 'restart': newGame(); break;
+    case 'newPilot': resetProfile(); showScreen('intro'); break;
+    case 'dir': openDir(+arg); break;
+  }
+}
+
+/* ---------- profile (intro) ---------- */
+const profile = { gender: null, age: null };
+function resetProfile() {
+  profile.gender = profile.age = null;
+  document.querySelectorAll('#scr-intro .nav.sel').forEach(n => n.classList.remove('sel'));
+  updateStart();
+}
+function markSel(prefix, el) {
+  document.querySelectorAll(`#scr-intro [data-act^="${prefix}:"]`).forEach(n => n.classList.remove('sel'));
+  if (el) el.classList.add('sel');
+  updateStart();
+}
+function updateStart() { $('startBtn').classList.toggle('off', !(profile.gender && profile.age)); }
+function jumpTo(sel, prefer) {
+  const scr = $('scr-' + curScreen);
+  const target = (prefer && scr.querySelector(sel.replace(']', ']') + prefer)) || scr.querySelector(sel);
+  const i = navItems.indexOf(target);
+  if (i >= 0) setFocus(i, true);
+}
+function refreshSettings() {
+  document.querySelectorAll('[data-set]').forEach(s => {
+    const k = s.dataset.set;
+    s.textContent = k === 'sound' ? (settings.sound ? 'УВІМК' : 'ВИМК') : (settings.fast ? 'ЕКСПРЕС' : 'АРКАДА');
+  });
+}
+function toMenu() {
+  mode = 'ui';
+  $('hud').classList.add('hidden'); $('qpanel').classList.remove('on'); banner('');
+  showScreen('menu');
+}
+
+/* ---------- toast / banner ---------- */
+let toastT = 0;
+function toast(msg, ms = 2600) { const t = $('toast'); t.innerHTML = msg; t.classList.add('on'); toastT = performance.now() + ms; }
+let bannerT = 0;
+function banner(msg, sub, ms = 1700) {
+  const b = $('banner');
+  if (!msg) { b.classList.remove('on'); return; }
+  b.innerHTML = msg + (sub ? `<small>${sub}</small>` : '');
+  b.classList.add('on'); bannerT = performance.now() + ms;
+}
+
+/* =====================================================================
+   7. INPUT — клавіатура, геймпад, дотик
+   ===================================================================== */
+const KEYMAP = { KeyW: 'up', ArrowUp: 'up', KeyS: 'down', ArrowDown: 'down', KeyA: 'left', ArrowLeft: 'left',
+  KeyD: 'right', ArrowRight: 'right', Space: 'ok', Enter: 'ok', NumpadEnter: 'ok', Escape: 'back', Backspace: 'back', KeyP: 'pause' };
+const kHeld = {}, pHeld = {};
+const held = a => !!(kHeld[a] || pHeld[a]);
+
+addEventListener('keydown', e => {
+  const a = KEYMAP[e.code]; if (!a) return;
+  e.preventDefault(); lastInput = performance.now(); ac();
+  if (e.repeat) { if (mode !== 'play' && ['up', 'down', 'left', 'right'].includes(a)) onPress(a); return; }
+  kHeld[a] = true; onPress(a);
+});
+addEventListener('keyup', e => { const a = KEYMAP[e.code]; if (a) kHeld[a] = false; });
+addEventListener('blur', () => { for (const k in kHeld) kHeld[k] = false; if (mode === 'play') pause(); });
+
+let pad = { idx: -1, prev: {}, rep: {}, ax: 0, ay: 0 };
+addEventListener('gamepadconnected', e => { toast('ГЕЙМПАД ПІДКЛЮЧЕНО<br>' + e.gamepad.id.slice(0, 48)); });
+addEventListener('gamepaddisconnected', () => { toast('ГЕЙМПАД ВІДКЛЮЧЕНО'); if (mode === 'play') pause(); });
+
+function pollPad(now) {
+  const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+  let p = null;
+  for (const g of pads) if (g && g.connected) { p = g; break; }
+  const ps = $('padStatus');
+  if (!p) {
+    if (pad.idx !== -1) { pad.idx = -1; ps.className = 'pad'; ps.innerHTML = 'ГЕЙМПАД НЕ ЗНАЙДЕНО<br>НАТИСНИ БУДЬ-ЯКУ КНОПКУ НА НЬОМУ'; }
+    for (const k in pHeld) pHeld[k] = false; pad.ax = pad.ay = 0; return;
+  }
+  if (pad.idx !== p.index) { pad.idx = p.index; ps.className = 'pad ok'; ps.innerHTML = 'ГЕЙМПАД ГОТОВИЙ'; }
+  const b = i => !!(p.buttons[i] && (p.buttons[i].pressed || p.buttons[i].value > .5));
+  let ax = p.axes[0] || 0, ay = p.axes[1] || 0;
+  if (Math.hypot(ax, ay) < .22) ax = ay = 0;
+  pad.ax = ax; pad.ay = ay;
+  const st = {
+    up: b(12) || ay < -.55, down: b(13) || ay > .55, left: b(14) || ax < -.55, right: b(15) || ax > .55,
+    ok: b(0), back: b(1), start: b(9), fire: b(0) || b(2) || b(7) || b(5)
+  };
+  let any = false;
+  for (const k in st) {
+    pHeld[k] = st[k];
+    if (st[k]) any = true;
+    if (k === 'fire') continue;
+    if (st[k] && !pad.prev[k]) { onPress(k); pad.rep[k] = now + 380; }
+    else if (st[k] && ['up', 'down', 'left', 'right'].includes(k) && mode !== 'play' && now > pad.rep[k]) { onPress(k); pad.rep[k] = now + 110; }
+    pad.prev[k] = st[k];
+  }
+  if (any) lastInput = now;
+}
+
+function onPress(a) {
+  if (mode === 'play') {
+    if (a === 'back' || a === 'pause' || a === 'start') pause();
+    return;
+  }
+  if (mode === 'paused' && (a === 'pause' || a === 'start')) { resume(); return; }
+  if (curScreen === 'name') { nameInput(a); return; }
+  if (['up', 'down', 'left', 'right'].includes(a)) moveNav(a);
+  else if (a === 'ok' || a === 'start') activate(navItems[navIdx]);
+  else if (a === 'back') goBack();
+}
+
+/* pointer: клік по пунктах меню, у грі — керування пальцем */
+const ptr = { on: false, x: 0, y: 0 };
+function toLocal(e) { const r = stage.getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width * W, y: (e.clientY - r.top) / r.height * H }; }
+stage.addEventListener('pointerdown', e => {
+  lastInput = performance.now(); ac();
+  if (mode === 'play') { const p = toLocal(e); ptr.on = true; ptr.x = p.x; ptr.y = p.y; return; }
+  const n = e.target.closest('.nav');
+  if (n && navItems.includes(n)) { setFocus(navItems.indexOf(n), true); activate(n); }
+});
+stage.addEventListener('pointermove', e => {
+  if (ptr.on) { const p = toLocal(e); ptr.x = p.x; ptr.y = p.y; }
+  else if (mode !== 'play' && e.pointerType === 'mouse') {
+    const n = e.target.closest('.nav');
+    if (n && navItems.includes(n) && navItems[navIdx] !== n) setFocus(navItems.indexOf(n), true);
+  }
+});
+addEventListener('pointerup', () => { ptr.on = false; });
+addEventListener('pointercancel', () => { ptr.on = false; });
+
+/* =====================================================================
+   8. GAME
+   ===================================================================== */
+const G = {};
+const PLAYER_R = 18, P_SIZE = 48;
+
+function newGame() {
+  Object.assign(G, {
+    q: 0, phase: 'run', pt: 0, dur: 0, score: 0, chain: 0, combo: 1,
+    swipes: [], items: [], bullets: [], parts: [], floats: [], portals: [],
+    power: 0, cool: 0, inv: 0, shake: 0, fireLock: true, typed: 0, ready: false,
+    tStar: .3, tHaz: 1, stats: { stars: 0, kills: 0, hits: 0 }, t: 0
+  });
+  G.p = { x: W / 2, y: 460, vx: 0, vy: 0 };
+  mode = 'play';
+  hideAllScreens();
+  $('hud').classList.remove('hidden');
+  buildDots();
+  updateHud();
+  startRun(true);
+}
+function runDuration() { return settings.fast ? 2.4 : (G.q === 0 ? 4 : 6); }
+function startRun(first) {
+  G.phase = 'run'; G.pt = 0; G.dur = runDuration(); G.ready = false;
+  $('qpanel').classList.remove('on');
+  if (first) banner('ХВИЛЯ ДАНИХ', 'ЗБИРАЙ ЗІРКИ · ЗБИВАЙ БАГИ');
+  updateHud();
+}
+function startGate() {
+  G.phase = 'gate'; G.pt = 0; G.ready = false; G.typed = 0;
+  for (const it of G.items) burst(it.x, it.y, it.type === 'star' ? '#ffe14d' : '#b84dff', 6);
+  G.items.length = 0; G.bullets.length = 0;
+  G.portals = [{ side: 0, x: 240, y: -100, ty: 262, r: 64, glow: 0 }, { side: 1, x: 720, y: -100, ty: 262, r: 64, glow: 0 }];
+  $('qNum').textContent = `ПИТАННЯ ${String(G.q + 1).padStart(2, '0')} / ${cards.length}`;
+  $('qText').textContent = '';
+  $('qpanel').classList.add('on');
+  sfx.portal();
+}
+function choose(side) {
+  G.swipes.push(side);                 // 0 = НІ, 1 = ТАК — як swipe left / right
+  G.score += 100;
+  const p = G.portals[side];
+  burst(p.x, p.y, side ? '#2bff88' : '#ff4458', 40, 260);
+  floatText(p.x, p.y - 80, side ? 'ТАК · +100' : 'НІ · +100', side ? '#2bff88' : '#ff4458');
+  G.phase = 'after'; G.pt = 0; G.shake = 6;
+  $('qpanel').classList.remove('on');
+  sfx.choose();
+  updateHud();
+}
+
+function spawnItem() {
+  const q = G.q, r = Math.random();
+  if (r < .06 && G.power <= 0) return G.items.push({ type: 'bulb', x: rnd(60, W - 60), y: -30, vx: 0, vy: 95, r: 16, t: 0 });
+  if (r < .55) return G.items.push({ type: 'bug', x: rnd(60, W - 60), y: -30, vx: 0, vy: rnd(85, 110) + q * 4, r: 17, hp: 1, t: rnd(0, 6), amp: rnd(40, 90) });
+  const big = Math.random() < .35 + q * .01;
+  G.items.push({ type: 'rock', x: rnd(40, W - 40), y: -40, vx: rnd(-30, 30), vy: rnd(110, 170) + q * 5, r: big ? 28 : 19,
+    hp: big ? 2 : 1, rot: rnd(0, 6), vr: rnd(-2, 2), spr: ROCKS[(Math.random() * ROCKS.length) | 0], t: 0 });
+}
+function burst(x, y, col, n = 14, sp = 180) {
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * 6.283, v = rnd(.3, 1) * sp;
+    G.parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: rnd(.4, .9), max: .9, col, s: (rnd(2, 5)) | 0 });
+  }
+}
+function floatText(x, y, s, col) { G.floats.push({ x, y, s, col, life: 1.1 }); }
+function addScore(n, x, y, col) {
+  G.score += n;
+  if (x !== undefined) floatText(x, y, '+' + n, col);
+}
+function bumpChain() {
+  G.chain++;
+  const c = Math.min(5, 1 + Math.floor(G.chain / 5));
+  if (c > G.combo) { G.combo = c; floatText(G.p.x, G.p.y - 50, 'COMBO x' + c, '#ff3df0'); }
+}
+function hurt() {
+  if (G.inv > 0) return;
+  G.inv = 1.6; G.chain = 0; G.combo = 1; G.score = Math.max(0, G.score - 50); G.stats.hits++;
+  G.shake = 12; burst(G.p.x, G.p.y, '#ff4458', 26, 240); floatText(G.p.x, G.p.y - 40, '-50', '#ff4458'); sfx.hit();
+}
+
+function update(dt) {
+  G.t += dt; G.pt += dt;
+  G.inv = Math.max(0, G.inv - dt); G.power = Math.max(0, G.power - dt); G.cool -= dt;
+  G.shake = Math.max(0, G.shake - dt * 30);
+
+  /* --- рух пілота --- */
+  let ix = (held('right') ? 1 : 0) - (held('left') ? 1 : 0);
+  let iy = (held('down') ? 1 : 0) - (held('up') ? 1 : 0);
+  if (Math.abs(pad.ax) > Math.abs(ix)) ix = pad.ax;
+  if (Math.abs(pad.ay) > Math.abs(iy)) iy = pad.ay;
+  const p = G.p, SPD = 360;
+  if (ptr.on) { ix = clamp((ptr.x - p.x) / 60, -1, 1); iy = clamp((ptr.y - 40 - p.y) / 60, -1, 1); }
+  const m = Math.hypot(ix, iy); if (m > 1) { ix /= m; iy /= m; }
+  p.vx += (ix * SPD - p.vx) * Math.min(1, dt * 12);
+  p.vy += (iy * SPD - p.vy) * Math.min(1, dt * 12);
+  p.x = clamp(p.x + p.vx * dt, 30, W - 30);
+  const minY = (G.phase === 'gate' && G.ready) ? 236 : 340;   // не вище центру порталів — над ними не пролетіти
+  p.y = clamp(p.y + p.vy * dt, minY, 505);
+
+  /* --- стрільба --- */
+  const fireHeld = held('ok') || pHeld.fire || ptr.on;
+  if (!fireHeld) G.fireLock = false;
+  if (fireHeld && !G.fireLock && G.cool <= 0 && G.phase === 'run') {
+    G.cool = .17;
+    const shots = G.power > 0 ? [-.22, 0, .22] : [0];
+    for (const a of shots) G.bullets.push({ x: p.x + a * 40, y: p.y - 26, vx: a * 420, vy: -640 });
+    sfx.shoot();
+  }
+
+  /* --- фази --- */
+  if (G.phase === 'run') {
+    G.tStar -= dt; G.tHaz -= dt;
+    if (G.tStar <= 0) { G.tStar = rnd(.3, .55); G.items.push({ type: 'star', x: rnd(40, W - 40), y: -20, vx: 0, vy: rnd(120, 170), r: 13, t: rnd(0, 6) }); }
+    if (G.tHaz <= 0) { G.tHaz = Math.max(.42, 1.15 - G.q * .035) * rnd(.7, 1.2); spawnItem(); }
+    if (G.pt >= G.dur) startGate();
+  } else if (G.phase === 'gate') {
+    const txt = cards[G.q].text;
+    const prevN = Math.floor(G.typed);
+    G.typed = Math.min(txt.length, G.typed + dt * 55);
+    if (Math.floor(G.typed) !== prevN) $('qText').textContent = txt.slice(0, Math.floor(G.typed));
+    for (const po of G.portals) po.y += (po.ty - po.y) * Math.min(1, dt * 4);
+    if (!G.ready && G.pt > 1 && G.typed >= txt.length) { G.ready = true; banner('ПОРТАЛИ ВІДКРИТО', '◀ НІ · ТАК ▶', 1200); }
+    if (G.ready) for (const po of G.portals) {
+      const d = Math.hypot(p.x - po.x, p.y - po.y);
+      po.glow = clamp(1 - (d - po.r) / 160, 0, 1);
+      if (d < po.r * .72) { choose(po.side); break; }
+    }
+  } else if (G.phase === 'after') {
+    for (const po of G.portals) po.r *= (1 - dt * 3);
+    if (G.pt > .9) {
+      G.portals = [];
+      G.q++;
+      if (G.q >= cards.length) { finish(); return; }
+      startRun(false);
+    }
+  }
+
+  /* --- об'єкти --- */
+  for (const b of G.bullets) { b.x += b.vx * dt; b.y += b.vy * dt; }
+  G.bullets = G.bullets.filter(b => b.y > -20 && !b.dead);
+
+  for (const it of G.items) {
+    it.t += dt;
+    if (it.type === 'bug') it.x += Math.cos(it.t * 3) * it.amp * dt;
+    if (it.type === 'rock') it.rot += it.vr * dt;
+    if (it.type === 'star' && G.power > 0) {
+      const dx = p.x - it.x, dy = p.y - it.y, d = Math.hypot(dx, dy);
+      if (d < 260) { it.x += dx / d * 380 * dt; it.y += dy / d * 380 * dt; }
+    }
+    it.x += it.vx * dt; it.y += it.vy * dt;
+
+    if (it.type === 'bug' || it.type === 'rock') {
+      for (const b of G.bullets) {
+        if (b.dead) continue;
+        if (Math.hypot(b.x - it.x, b.y - it.y) < it.r + 6) {
+          b.dead = true; it.hp--;
+          burst(b.x, b.y, '#3cf0ff', 5, 120);
+          if (it.hp <= 0) {
+            it.dead = true; G.stats.kills++; bumpChain();
+            const pts = (it.type === 'bug' ? 25 : it.r > 24 ? 30 : 15) * G.combo;
+            addScore(pts, it.x, it.y, '#3cf0ff');
+            burst(it.x, it.y, it.type === 'bug' ? '#b84dff' : '#8f7bc4', 18); sfx.boom(); G.shake = Math.max(G.shake, 3);
+          }
+          break;
+        }
+      }
+    }
+    if (!it.dead && Math.hypot(p.x - it.x, p.y - it.y) < PLAYER_R + it.r * .8) {
+      if (it.type === 'star') { it.dead = true; G.stats.stars++; bumpChain(); addScore(10 * G.combo, it.x, it.y - 10, '#ffe14d'); burst(it.x, it.y, '#ffe14d', 8, 120); sfx.star(); }
+      else if (it.type === 'bulb') { it.dead = true; G.power = 8; addScore(50, it.x, it.y, '#ffe14d'); floatText(p.x, p.y - 60, 'ІДЕЯ! x3 ЛАЗЕР', '#ffe14d'); burst(it.x, it.y, '#ffe14d', 24, 200); sfx.power(); }
+      else if (G.inv <= 0) { it.dead = true; burst(it.x, it.y, '#ff4458', 12); hurt(); }
+    }
+  }
+  G.items = G.items.filter(it => !it.dead && it.y < H + 50);
+
+  for (const q of G.parts) { q.x += q.vx * dt; q.y += q.vy * dt; q.vx *= .96; q.vy *= .96; q.life -= dt; }
+  G.parts = G.parts.filter(q => q.life > 0);
+  for (const f of G.floats) { f.y -= 40 * dt; f.life -= dt; }
+  G.floats = G.floats.filter(f => f.life > 0);
+
+  updateHud();
+}
+
+/* ---------- HUD ---------- */
+function buildDots() { $('hDots').innerHTML = cards.map(() => '<i></i>').join(''); }
+let hudCache = '';
+function updateHud() {
+  const k = [G.score, G.combo, G.q, G.swipes.length, Math.ceil(G.power)].join('|');
+  if (k === hudCache) return; hudCache = k;
+  $('hScore').textContent = String(G.score).padStart(6, '0');
+  $('hCombo').textContent = 'x' + G.combo;
+  $('hQ').textContent = `ПИТАННЯ ${String(Math.min(G.q + 1, cards.length)).padStart(2, '0')} / ${cards.length}`;
+  $('hPow').textContent = G.power > 0 ? 'ІДЕЯ ' + Math.ceil(G.power) + 'с' : '';
+  [...$('hDots').children].forEach((d, i) => { d.className = i < G.swipes.length ? 'done' : i === G.q ? 'now' : ''; });
+}
+
+/* ---------- pause ---------- */
+function lockPadDirs() { ['up', 'down', 'left', 'right'].forEach(k => { pad.rep[k] = Infinity; }); }   // утримуваний стік не гортає меню
+function pause() { if (mode !== 'play') return; mode = 'paused'; ptr.on = false; lockPadDirs(); showScreen('pause'); sfx.back(); }
+function resume() { if (mode !== 'paused') return; hideAllScreens(); mode = 'play'; G.fireLock = true; }
+
+/* =====================================================================
+   9. FINISH, SCORES, RESULTS
+   ===================================================================== */
+function finish() {
+  mode = 'ui'; lockPadDirs();
+  $('hud').classList.add('hidden'); $('qpanel').classList.remove('on'); banner('');
+  const categoryResults = resultsCalculator.calculatePercentages(G.swipes);
+  const record = { gender: profile.gender, age: profile.age, swipes: G.swipes.slice(), suggestion: categoryResults };
+  jsonBucket.addNew(record);
+  G.result = categoryResults;
+  sfx.finish();
+  buildResults();
+
+  const list = loadScores();
+  const rank = list.filter(s => s.s >= G.score).length + 1;
+  G.rank = rank;
+  if (rank <= 10) {
+    nm.slots = ['A', 'A', 'A']; nm.pos = 0; nm.idx = [0, 0, 0];
+    $('nmScore').textContent = G.score; $('nmRank').textContent = '#' + rank;
+    renderSlots(); showScreen('name');
+  } else showScreen('results');
+}
+function loadScores() { const s = store.get(SCORE_KEY, { list: [] }); return Array.isArray(s.list) ? s.list : []; }
+function topDirection() {
+  const best = G.result.slice().sort((a, b) => b.percentage - a.percentage)[0];
+  return educationDirections.find(d => d.id === best.id);
+}
+
+const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZАБВГҐДЕЄЖЗИІЇЙКЛМНОПРСТУФХЦЧШЩЬЮЯ0123456789';
+const nm = { slots: ['A', 'A', 'A'], idx: [0, 0, 0], pos: 0 };
+function renderSlots() { for (let i = 0; i < 3; i++) { const s = $('sl' + i); s.textContent = CHARS[nm.idx[i]]; s.classList.toggle('on', i === nm.pos); } }
+function nameInput(a) {
+  if (a === 'up' || a === 'down') { nm.idx[nm.pos] = (nm.idx[nm.pos] + (a === 'up' ? 1 : -1) + CHARS.length) % CHARS.length; sfx.move(); }
+  else if (a === 'left') { nm.pos = Math.max(0, nm.pos - 1); sfx.move(); }
+  else if (a === 'right') { nm.pos = Math.min(2, nm.pos + 1); sfx.move(); }
+  else if (a === 'ok' || a === 'start') { if (nm.pos < 2) { nm.pos++; sfx.ok(); } else { saveName(); return; } }
+  else if (a === 'back') { if (nm.pos > 0) { nm.pos--; sfx.back(); } }
+  renderSlots();
+}
+function saveName() {
+  const n = nm.idx.map(i => CHARS[i]).join('');
+  const list = loadScores();
+  const entry = { n, s: G.score, d: topDirection().name, t: Date.now() };
+  list.push(entry);
+  list.sort((a, b) => b.s - a.s || a.t - b.t);
+  store.set(SCORE_KEY, { list: list.slice(0, 10) });
+  G.lastEntryT = entry.t;
+  sfx.ok();
+  showScreen('results');
+}
+function buildScores() {
+  const list = loadScores();
+  if (!list.length) { $('scoreTable').innerHTML = '<div class="empty">Рекордів ще немає. Стань першим пілотом!</div>'; return; }
+  $('scoreTable').innerHTML = '<table class="sc">' + list.map((s, i) =>
+    `<tr class="${s.t === G.lastEntryT ? 'me' : ''}"><td>${String(i + 1).padStart(2, '0')}</td><td>${esc(s.n)}</td><td class="d">${esc(s.d || '')}</td><td class="r">${String(s.s).padStart(6, '0')}</td></tr>`
+  ).join('') + '</table>';
+}
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+
+function buildResults() {
+  const results = G.result.map(cat => {
+    const d = educationDirections.find(x => x.id === cat.id);
+    return { id: d.id, name: d.name, url: d.url, percentage: cat.percentage };
+  }).sort((a, b) => b.percentage - a.percentage);
+
+  $('resList').innerHTML = results.map((r, i) =>
+    `<div class="nav res-item" data-act="dir:${r.id}"><div class="res-bg" data-w="${r.percentage}"></div>` +
+    `<span class="res-name"><span class="rk">#${i + 1}</span>${r.name}</span><span class="res-pc">${r.percentage}%</span></div>`).join('');
+  setTimeout(() => document.querySelectorAll('#resList .res-bg').forEach((b, i) =>
+    setTimeout(() => { b.style.width = b.dataset.w + '%'; }, 120 * i)), 60);
+
+  const yes = G.swipes.filter(x => x === 1).length;
+  const top = results[0];
+  let html;
+  if (yes === 0) {
+    html = '<p>Усі 20 відповідей — НІ, тому зважена сума для кожного напряму дорівнює нулю. Спробуй пройти ще раз і відповідай ТАК там, де тобі справді цікаво.</p>';
+  } else {
+    const w = resultsCalculator.model.find(m => m.id === top.id).weights;
+    const contrib = G.swipes.map((s, i) => ({ i, v: s * w[i] })).filter(c => c.v > 0).sort((a, b) => b.v - a.v).slice(0, 4);
+    html = `<p style="margin-bottom:8px">Відповідей ТАК: ${yes} з ${cards.length}. Найбільше до напряму «${top.name}» додали:</p><ul>` +
+      contrib.map(c => `<li><span>${c.i + 1}. ${cards[c.i].short}</span><b>+${(c.v * 100).toFixed(1)}%</b></li>`).join('') + '</ul>';
+  }
+  $('whyBox').innerHTML = html;
+  $('resScore').textContent = String(G.score).padStart(6, '0') + ` · ЗІРОК ${G.stats.stars} · БАГІВ ${G.stats.kills}`;
+}
+function openDir(id) {
+  const d = educationDirections.find(x => x.id === id);
+  if (!d) return;
+  let w = null;
+  try { w = window.open(d.url, '_blank'); } catch (e) {}
+  if (w) { try { w.opener = null; } catch (e) {} toast('ВІДКРИТО: ' + d.name); }
+  else toast('Браузер заблокував нову вкладку. Адреса сторінки:<br>' + d.url.replace('https://', ''), 7000);
+}
+
+/* ---------- model heatmap ---------- */
+(function buildHeat() {
+  const h = $('heat');
+  let html = '<div></div>' + cards.map((_, i) => `<div class="cn">${i + 1}</div>`).join('');
+  resultsCalculator.model.forEach((m, r) => {
+    const d = educationDirections.find(x => x.id === m.id);
+    html += `<div class="rl">${d.name}</div>`;
+    m.weights.forEach((w, i) => {
+      const a = Math.min(1, w / .18);
+      html += `<div class="nav cell" data-cell="${r},${i}" style="background:rgba(34,230,255,${(.08 + a * .92).toFixed(2)});box-shadow:0 0 ${(a * 10).toFixed(0)}px rgba(34,230,255,${a.toFixed(2)})"></div>`;
+    });
+  });
+  h.innerHTML = html;
+})();
+function showCellInfo(el) {
+  const [r, i] = el.dataset.cell.split(',').map(Number);
+  const m = resultsCalculator.model[r], d = educationDirections.find(x => x.id === m.id);
+  const w = m.weights[i];
+  const rank = m.weights.slice().sort((a, b) => b - a).indexOf(w) + 1;
+  $('heatInfo').innerHTML = `<b>Питання ${i + 1}:</b> ${cards[i].text}<br>Вага для «${d.name}»: <b>${w.toFixed(4)}</b> — ТАК додає ${(w * 100).toFixed(1)}%, це ${rank}-те за важливістю питання для напряму.`;
+}
+
+/* ---------- legend sprites ---------- */
+document.querySelectorAll('canvas[data-spr]').forEach(c => {
+  c.width = c.height = 40;
+  const x = c.getContext('2d'); x.imageSmoothingEnabled = false;
+  const k = c.dataset.spr;
+  if (k === 'portal') {
+    x.strokeStyle = '#2bff88'; x.lineWidth = 3; x.shadowColor = '#2bff88'; x.shadowBlur = 6;
+    x.beginPath(); x.arc(20, 20, 14, 0, 7); x.stroke(); x.strokeStyle = '#ff4458'; x.beginPath(); x.arc(20, 20, 7, 0, 7); x.stroke();
+    return;
+  }
+  const s = k === 'rock' ? ROCKS[0] : k === 'bug' ? SPR.bugA : SPR[k];
+  const sc = Math.floor(36 / Math.max(s.width, s.height));
+  x.drawImage(s, (40 - s.width * sc) / 2, (40 - s.height * sc) / 2, s.width * sc, s.height * sc);
+});
+
+/* =====================================================================
+   10. RENDER
+   ===================================================================== */
+function drawBg(dt, speed) {
+  bg.t += dt;
+  const g = ctx.createLinearGradient(0, 0, 0, HORIZON);
+  g.addColorStop(0, '#070216'); g.addColorStop(.7, '#160632'); g.addColorStop(1, '#2c0b44');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, HORIZON);
+
+  bg.neb = (bg.neb + dt * 10 * speed) % 1080;
+  ctx.drawImage(neb, 0, bg.neb - 1080, W, 1080);
+  ctx.drawImage(neb, 0, bg.neb, W, 1080);
+
+  ctx.drawImage(planet, 760, 70 + Math.sin(bg.t * .3) * 6, 132, 90);
+
+  const sp = [14, 38, 90];
+  starLayers.forEach((l, k) => {
+    for (const s of l) {
+      s.y += sp[k] * speed * dt;
+      if (s.y > HORIZON) { s.y -= HORIZON; s.x = Math.random() * W; }
+      const a = k === 2 ? 1 : .45 + .55 * Math.abs(Math.sin(bg.t * 2 + s.tw));
+      ctx.fillStyle = k === 2 ? `rgba(200,240,255,${a})` : `rgba(255,255,255,${a * (k ? .8 : .55)})`;
+      const sz = k + 1;
+      ctx.fillRect(s.x | 0, s.y | 0, sz, k === 2 && speed > .6 ? sz * 3 : sz);
+    }
+  });
+
+  ctx.drawImage(sun, 480 - 120, HORIZON - 120, 240, 120);
+  ctx.drawImage(sky, 0, HORIZON - 104, W, 104);
+
+  const fg = ctx.createLinearGradient(0, HORIZON, 0, H);
+  fg.addColorStop(0, '#1d0636'); fg.addColorStop(1, '#05010c');
+  ctx.fillStyle = fg; ctx.fillRect(0, HORIZON, W, H - HORIZON);
+
+  bg.grid = (bg.grid + dt * .9 * speed) % 1;
+  ctx.strokeStyle = 'rgba(255,61,240,.55)'; ctx.lineWidth = 2;
+  ctx.beginPath();
+  const N = 9;
+  for (let i = 0; i < N; i++) {
+    const p = (i + bg.grid) / N, y = HORIZON + (H - HORIZON) * p * p;
+    ctx.moveTo(0, y | 0); ctx.lineTo(W, y | 0);
+  }
+  for (let j = -14; j <= 14; j++) { ctx.moveTo(480 + j * 14, HORIZON); ctx.lineTo(480 + j * 110, H); }
+  ctx.stroke();
+  ctx.fillStyle = '#ff3df0'; ctx.shadowColor = '#ff3df0'; ctx.shadowBlur = 14;
+  ctx.fillRect(0, HORIZON - 1, W, 3); ctx.shadowBlur = 0;
+}
+
+function spr(img, x, y, w, h, glow, col, rot) {
+  ctx.save(); ctx.translate(x, y); if (rot) ctx.rotate(rot);
+  if (glow) { ctx.shadowColor = col; ctx.shadowBlur = glow; }
+  ctx.drawImage(img, -w / 2, -h / 2, w, h); ctx.restore();
+}
+
+function drawRobot(x, y, size, t, tilt, power, alpha = 1) {
+  ctx.save(); ctx.globalAlpha = alpha;
+  const fl = 6 + Math.sin(t * 40) * 3 + Math.random() * 3, u = size / 16;
+  ctx.fillStyle = '#ff9a1f'; ctx.shadowColor = '#ff9a1f'; ctx.shadowBlur = 12;
+  for (const ox of [-3.5, 3.5]) {
+    ctx.fillRect(x + ox * u - u, y + size / 2, u * 2, fl * u / 3);
+    ctx.fillStyle = '#ffe14d'; ctx.fillRect(x + ox * u - u / 2, y + size / 2, u, fl * u / 5); ctx.fillStyle = '#ff9a1f';
+  }
+  ctx.shadowBlur = 0;
+  if (power > 0) {
+    const r = u * 6 + Math.sin(t * 10) * u;
+    const g = ctx.createRadialGradient(x, y - size / 2 + u, 0, x, y - size / 2 + u, r * 2);
+    g.addColorStop(0, 'rgba(255,225,77,.75)'); g.addColorStop(1, 'rgba(255,225,77,0)');
+    ctx.fillStyle = g; ctx.fillRect(x - r * 2, y - size / 2 + u - r * 2, r * 4, r * 4);
+  }
+  const blink = (t % 3.2) < .12;
+  spr(blink ? SPR.blink : SPR.robot, x, y, size, size, 14, '#22e6ff', tilt);
+  ctx.restore();
+}
+
+function drawPortal(po, t) {
+  const col = po.side ? '43,255,136' : '255,68,88', hex = po.side ? '#2bff88' : '#ff4458';
+  const on = G.ready, r = Math.max(1, po.r * (1 + po.glow * .12));
+  ctx.save(); ctx.translate(po.x, po.y);
+  const g = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
+  g.addColorStop(0, `rgba(${col},${on ? .55 : .2})`); g.addColorStop(.7, `rgba(${col},${on ? .18 : .06})`); g.addColorStop(1, `rgba(${col},0)`);
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, r, 0, 7); ctx.fill();
+  ctx.shadowColor = hex; ctx.shadowBlur = on ? 18 : 6;
+  ctx.lineWidth = 4; ctx.strokeStyle = hex; ctx.globalAlpha = on ? 1 : .5;
+  for (let k = 0; k < 3; k++) {
+    const rr = r - k * 13, rot = t * (k % 2 ? -1.6 : 1.2) + k;
+    if (rr <= 2) continue;
+    for (let s = 0; s < 6; s++) { ctx.beginPath(); ctx.arc(0, 0, rr, rot + s * 1.047, rot + s * 1.047 + .6); ctx.stroke(); }
+  }
+  for (let s = 0; s < 8; s++) {
+    const a = t * 2 + s * .785, rr = (r * .8) * ((t * .6 + s / 8) % 1);
+    ctx.fillStyle = '#fff'; ctx.fillRect(Math.cos(a) * rr - 2, Math.sin(a) * rr - 2, 4, 4);
+  }
+  ctx.lineWidth = 7; ctx.strokeStyle = '#fff'; ctx.shadowBlur = 12; ctx.beginPath();
+  if (po.side) { ctx.moveTo(-14, 0); ctx.lineTo(-4, 11); ctx.lineTo(16, -12); }
+  else { ctx.moveTo(-12, -12); ctx.lineTo(12, 12); ctx.moveTo(12, -12); ctx.lineTo(-12, 12); }
+  ctx.stroke();
+  ctx.shadowBlur = 10; ctx.fillStyle = hex; ctx.font = '16px "Press Start 2P", monospace'; ctx.textAlign = 'center';
+  ctx.fillText(po.side ? 'ТАК ▶' : '◀ НІ', 0, po.r + 30);
+  ctx.restore();
+}
+
+function render(dt) {
+  ctx.imageSmoothingEnabled = false;
+  const playing = mode === 'play' || mode === 'paused';
+  const speed = playing ? (G.phase === 'run' ? 1 : .25) : .5;
+  ctx.save();
+  if (playing && G.shake > 0) ctx.translate(rnd(-G.shake, G.shake), rnd(-G.shake, G.shake));
+  drawBg(mode === 'paused' ? 0 : dt, speed);
+
+  if (mode === 'ui' && curScreen === 'menu') {
+    const t = bg.t, cx = 700, cy = 236 + Math.sin(t * 1.6) * 10;
+    const orbit = [SPR.star, SPR.bulb, SPR.bugA, ROCKS[1], SPR.star];
+    orbit.forEach((s, i) => {
+      const a = t * .7 + i * 1.2566, ox = cx + Math.cos(a) * 190, oy = cy + Math.sin(a) * 70;
+      if (Math.sin(a) < 0) spr(s, ox, oy, s.width * 3, s.height * 3, 10, '#a855f7');
+    });
+    const halo = ctx.createRadialGradient(cx, cy, 10, cx, cy, 170);
+    halo.addColorStop(0, 'rgba(168,85,247,.45)'); halo.addColorStop(1, 'rgba(168,85,247,0)');
+    ctx.fillStyle = halo; ctx.fillRect(cx - 170, cy - 170, 340, 340);
+    drawRobot(cx, cy, 176, t, Math.sin(t) * .06, 1);
+    orbit.forEach((s, i) => {
+      const a = t * .7 + i * 1.2566, ox = cx + Math.cos(a) * 190, oy = cy + Math.sin(a) * 70;
+      if (Math.sin(a) >= 0) spr(s, ox, oy, s.width * 4, s.height * 4, 12, '#ff3df0');
+    });
+  }
+
+  if (playing) {
+    for (const po of G.portals) drawPortal(po, bg.t);
+    for (const it of G.items) {
+      if (it.type === 'star') spr(SPR.star, it.x, it.y, 27, 27, 12, '#ffd23f', Math.sin(it.t * 3) * .3);
+      else if (it.type === 'bulb') spr(SPR.bulb, it.x, it.y + Math.sin(it.t * 5) * 4, 27, 36, 20, '#ffe14d');
+      else if (it.type === 'bug') spr((it.t * 6 | 0) % 2 ? SPR.bugA : SPR.bugB, it.x, it.y, 40, 34, 12, '#b84dff');
+      else spr(it.spr, it.x, it.y, it.r * 2.3, it.r * 2.3, 6, '#a855f7', it.rot);
+    }
+    ctx.shadowColor = '#22e6ff'; ctx.shadowBlur = 10; ctx.fillStyle = '#bff8ff';
+    for (const b of G.bullets) ctx.fillRect(b.x - 2, b.y - 9, 4, 18);
+    ctx.shadowBlur = 0;
+    const p = G.p;
+    const vis = G.inv <= 0 || ((G.inv * 12) | 0) % 2 === 0;
+    if (vis) drawRobot(p.x, p.y, P_SIZE, bg.t, p.vx * .0009, G.power);
+    ctx.globalCompositeOperation = 'lighter';
+    for (const q of G.parts) { ctx.globalAlpha = Math.max(0, q.life / q.max); ctx.fillStyle = q.col; ctx.fillRect(q.x | 0, q.y | 0, q.s, q.s); }
+    ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+    ctx.font = '12px "Press Start 2P", monospace'; ctx.textAlign = 'center';
+    for (const f of G.floats) {
+      ctx.globalAlpha = Math.min(1, f.life * 1.6); ctx.fillStyle = f.col; ctx.shadowColor = f.col; ctx.shadowBlur = 8;
+      ctx.fillText(f.s, f.x, f.y);
+    }
+    ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+  }
+  ctx.restore();
+}
+
+/* =====================================================================
+   11. LOOP, LAYOUT, IDLE RESET
+   ===================================================================== */
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(.05, (now - last) / 1000); last = now;
+  try {
+    pollPad(now);
+    if (mode === 'play') update(dt);
+    render(dt);
+  } catch (e) { console.error(e); }
+  if (toastT && now > toastT) { $('toast').classList.remove('on'); toastT = 0; }
+  if (bannerT && now > bannerT) { banner(''); bannerT = 0; }
+  if (mode === 'ui' && curScreen && curScreen !== 'menu' && now - lastInput > 90000) {
+    if (curScreen === 'name') saveName();
+    toMenu(); lastInput = now;
+  }
+  requestAnimationFrame(frame);
+}
+function fit() { const s = Math.min(innerWidth / W, innerHeight / H); stage.style.transform = `translate(-50%,-50%) scale(${s})`; }
+addEventListener('resize', fit);
+fit();
+showScreen('menu');
+requestAnimationFrame(frame);
+
+window.__CB = { G, settings, cards, resultsCalculator, jsonBucket, get mode() { return mode; }, get screen() { return curScreen; } };
+})();
+</script>
+</body>
+</html>
