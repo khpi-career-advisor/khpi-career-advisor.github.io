@@ -1,0 +1,59 @@
+/* Results Screen */
+.res-title {
+    font-size: clamp(18px, 5.6vw, 32px);
+    margin-bottom: 8px;
+}
+
+.results-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    margin: 14px 0 6px;
+}
+
+.result-item {
+    justify-content: space-between;
+    overflow: hidden;
+    padding: 16px;
+    min-height: 62px;
+}
+
+.result-item .bar {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 0;
+    background: linear-gradient(90deg, #a855f7, #ec4899, #f97316, #eab308);
+    opacity: .35;
+    transition: width 1s ease;
+    pointer-events: none;
+}
+
+.result-item .nm {
+    position: relative;
+    text-align: left;
+    font-size: clamp(15px, 4vw, 18px);
+}
+
+.result-item .right {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.result-item .pc {
+    font-family: var(--pf);
+    font-size: clamp(13px, 3.6vw, 17px);
+    color: var(--yl);
+    text-shadow: 0 0 8px rgba(255, 154, 31, .8);
+    margin-left: 10px;
+}
+
+.result-item .go {
+    font-family: var(--pf);
+    font-size: 10px;
+    color: var(--cy);
+    margin-left: 10px;
+}

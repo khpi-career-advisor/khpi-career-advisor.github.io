@@ -1,0 +1,58 @@
+/* Intro Screen: стать і вік */
+#botCv {
+    width: 76px;
+    height: 76px;
+    image-rendering: pixelated;
+    filter: drop-shadow(0 0 12px rgba(34, 230, 255, .7));
+    margin-bottom: 10px;
+}
+
+.lbl {
+    font-family: var(--pf);
+    font-size: clamp(9px, 2.6vw, 11px);
+    color: var(--yl);
+    text-shadow: 0 0 8px rgba(255, 154, 31, .7);
+    text-align: center;
+    margin: 16px 0 10px;
+    line-height: 1.6;
+}
+
+.grid3 {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    width: 100%;
+}
+
+.grid-age {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    width: 100%;
+}
+
+@media (min-width:700px) and (min-height:600px) {
+    .grid3 {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (orientation:landscape) and (max-height:500px) {
+    .grid3 {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .grid-age {
+        grid-template-columns: repeat(6, 1fr);
+    }
+
+    #botCv {
+        width: 40px;
+        height: 40px;
+        margin-bottom: 4px;
+    }
+
+    .lbl {
+        margin: 10px 0 8px;
+    }
+}

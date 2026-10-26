@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LocalStorage Collection Viewer</title>
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>LocalStorage Collection Viewer</h1>
+            <p>View and manage localStorage collections</p>
+        </div>
+
+        <div class="controls">
+            <input type="text" id="searchInput" placeholder="Search by content...">
+            <select id="collectionSelect">
+                <option value="">Select collection</option>
+            </select>
+            <button onclick="app.addNewItem()">Add New</button>
+            <button class="secondary" onclick="app.downloadCollection()">Download JSON</button>
+            <button onclick="app.refreshData()">Refresh</button>
+            <button class="danger" onclick="app.clearCollection()">Clear Collection</button>
+        </div>
+
+        <div class="stats" id="stats"></div>
+
+        <div class="content" id="content">
+            <div class="empty-state">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4">
+                    </path>
+                </svg>
+                <p>Select a collection to view</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Add Item</h2>
+                <button class="modal-close" onclick="app.closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="itemData">JSON Data:</label>
+                    <textarea id="itemData" placeholder='{"key": "value"}'></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="app.closeModal()">Cancel</button>
+                <button class="primary" onclick="app.saveItem()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/bucket.js"></script>
+    <script src="js/admin.js"></script>
+</body>
+
+</html>

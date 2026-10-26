@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="uk">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#07040f">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <title>Який ти Політехнік?</title>
+
+    <!-- Шрифти -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Exo+2:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/intro.css">
+    <link rel="stylesheet" href="css/quiz.css">
+    <link rel="stylesheet" href="css/results.css">
+</head>
+
+<body>
+    <div id="bg"></div>
+
+    <div id="app">
+        <!-- Вступний екран -->
+        <section class="screen scroll" id="scr-intro">
+            <div class="col">
+                <canvas id="botCv" width="16" height="16" aria-hidden="true"></canvas>
+                <h1 class="rainbow">Привіт!</h1>
+                <p class="lead">20 коротких питань — і побачиш, який напрям у ХПІ тобі пасує найбільше</p>
+                <div class="lbl">ТВОЯ СТАТЬ?</div>
+                <div class="grid3">
+                    <button class="nav" data-act="g:male">Чоловіча</button>
+                    <button class="nav" data-act="g:female">Жіноча</button>
+                    <button class="nav" data-act="g:prefer-not">Не хочу вказувати</button>
+                </div>
+                <div class="lbl">СКІЛЬКИ ТОБІ РОКІВ?</div>
+                <div class="grid-age">
+                    <button class="nav" data-act="a:5-12">5–12</button>
+                    <button class="nav" data-act="a:13-18">13–18</button>
+                    <button class="nav" data-act="a:19-29">19–29</button>
+                    <button class="nav" data-act="a:30-44">30–44</button>
+                    <button class="nav" data-act="a:45-64">45–64</button>
+                    <button class="nav" data-act="a:65+">65+</button>
+                </div>
+                <button class="nav primary off" id="confirmBtn" data-act="start">ПОЧАТИ ТЕСТ</button>
+            </div>
+        </section>
+
+        <!-- Екран питань -->
+        <section class="screen" id="scr-quiz">
+            <div class="qhead"><span id="qNum">01 / 20</span>
+                <div id="dots"></div>
+            </div>
+            <div class="board">
+                <button class="ans up" data-i="1" aria-label="Скоріше ні"><span class="ar">▲</span><span class="tx">Скоріше ні</span><span class="k">W</span></button>
+                <button class="ans left" data-i="0" aria-label="Точно ні"><span class="ar">◀</span><span class="tx">Точно<br>ні</span><span class="k">A</span></button>
+                <div class="card" id="card">
+                    <div class="scene"><canvas id="sceneCv" aria-hidden="true"></canvas></div>
+                    <div class="qtext" id="qText"></div>
+                    <div class="tint" id="tint"></div>
+                </div>
+                <button class="ans right" data-i="3" aria-label="Точно так"><span class="ar">▶</span><span class="tx">Точно<br>так</span><span class="k">D</span></button>
+                <button class="ans down" data-i="2" aria-label="Скоріше так"><span class="ar">▼</span><span class="tx">Скоріше так</span><span class="k">S</span></button>
+            </div>
+            <div class="hintline"><span class="desk">WASD · СТРІЛКИ · ГЕЙМПАД · ПЕРЕТЯГНИ КАРТКУ</span><span class="touch">ТИСНИ КНОПКУ АБО СВАЙПНИ КАРТКУ В ПОТРІБНИЙ БІК</span></div>
+        </section>
+
+        <!-- Екран результатів -->
+        <section class="screen scroll" id="scr-results">
+            <div class="col">
+                <h1 class="rainbow res-title">ХПІ чекає на тебе!</h1>
+                <p class="lead" style="margin:6px 0 0">Тисни на напрям, який тобі найбільше підходить</p>
+                <div class="results-list" id="resultsList"></div>
+                <button class="nav primary" data-act="retry">СПРОБУВАТИ ЩЕ РАЗ</button>
+            </div>
+        </section>
+    </div>
+    <div id="toast"></div>
+    <div id="crt"></div>
+
+    <!-- JavaScript — порядок має значення -->
+    <script src="js/bucket.js"></script>
+    <!-- сховище localStorage (спільне з admin.html) -->
+    <script src="js/data.js"></script>
+    <!-- питання та напрями освіти -->
+    <script src="js/answers.js"></script>
+    <!-- шкала відповідей 0 / 0.25 / 0.75 / 1 -->
+    <script src="js/weights.js"></script>
+    <!-- ваги моделі -->
+    <script src="js/calculator.js"></script>
+    <!-- зважена сума → відсотки -->
+    <script src="js/state.js"></script>
+    <!-- стан тесту -->
+    <script src="js/screens.js"></script>
+    <!-- екрани й навігація фокусом -->
+    <script src="js/intro.js"></script>
+    <!-- стать і вік -->
+    <script src="js/pixel.js"></script>
+    <!-- піксельні примітиви та спрайти -->
+    <script src="js/scenes.js"></script>
+    <!-- аркадні сцени до питань -->
+    <script src="js/quiz.js"></script>
+    <!-- відповіді: кнопки й свайп -->
+    <script src="js/results.js"></script>
+    <!-- результати й посилання -->
+    <script src="js/input.js"></script>
+    <!-- клавіатура й геймпад -->
+    <script src="js/app.js"></script>
+    <!-- запуск і головний цикл -->
+</body>
+
+</html>
