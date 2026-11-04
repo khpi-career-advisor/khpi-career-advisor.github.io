@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="darkreader-lock">
+  <meta name="description" content="Тест з профорієнтації НТУ “ХПІ”: 25 запитань, які допоможуть обрати спеціальність.">
+  <title>Тест з профорієнтації НТУ "ХПІ"</title>
+  <link rel="icon" type="image/png" href="logo.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="background">
+    <div class="card">
+
+      <section class="welcome" id="screen-welcome">
+        <div class="logo-wrapper">
+          <a href="https://vstup.kpi.kharkov.ua/admission/" target="_blank" rel="noopener noreferrer">
+            <img class="logo" src="logo.png" alt="Логотип НТУ “ХПІ”">
+          </a>
+        </div>
+        <h1>Привіт, друже!</h1>
+        <p>НТУ “ХПІ“ підготував для тебе тест, який допоможе визначитися з майбутньою професією. Хочеш дізнатися, яка спеціальність підходить тобі найбільше?</p>
+        <button type="button" class="styled-button" id="start">Почати тест!</button>
+      </section>
+
+      <section class="question" id="screen-question" hidden>
+        <h2 id="counter">Запитання 1/25</h2>
+        <div class="progress-bar"><span class="progress-bar-fill" id="progress"></span></div>
+        <div class="pic-wrapper">
+          <div class="skeleton" id="skeleton"></div>
+          <img class="pic" id="pic" alt="" hidden>
+        </div>
+        <p id="question-text"></p>
+        <div class="options">
+          <button type="button" class="styled-button question-button" data-answer="yes">Так</button>
+          <button type="button" class="styled-button question-button" data-answer="no">Ні</button>
+        </div>
+      </section>
+
+      <section class="result" id="screen-result" hidden>
+        <h1>Результат тесту</h1>
+        <p id="verdict"></p>
+        <button type="button" class="styled-button" id="restart">На головну</button>
+      </section>
+
+    </div>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden>
+    <span class="toast-icon" aria-hidden="true">👨‍🏫</span>
+    <span>Натисни на логотип НТУ “ХПІ“!</span>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
