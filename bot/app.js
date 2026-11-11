@@ -8,12 +8,14 @@
     var elOverview = document.getElementById("overview");
     var elEnd = document.getElementById("scrollEnd");
     var elOptions = document.getElementById("options");
+    var elInput = document.getElementById("inputText");
+    var elSend = document.getElementById("sendBtn");
 
     /* Стан розмови. Нічого не зберігається і нікуди не надсилається. */
     var state;
 
     function resetState() {
-        state = { q: -1, busy: false, scores: {}, current: [] };
+        state = { q: -1, busy: false, scores: {}, current: [], selected: -1 };
         Object.keys(DIRECTIONS).forEach(function(k) { state.scores[k] = 0; });
     }
 
@@ -56,26 +58,76 @@
         })();
     }
 
-    /* ---------- Варіанти відповідей: один вибір, надсилається одразу ---------- */
+    /* ---------- Варіанти відповідей ----------
+       Натискання на варіант лише обирає його й показує в полі вводу.
+       Відповідь надсилається кнопкою зі стрілкою (або клавішею Enter).
+       До надсилання вибір можна змінити. */
+    var PLACEHOLDER_IDLE = "Надіслати повідомлення...";
+    var PLACEHOLDER_PICK = "Обери варіант і натисни стрілку";
+
     function setOptions(options) {
         state.current = options;
+        state.selected = -1;
         elOptions.innerHTML = "";
         options.forEach(function(opt, idx) {
             var b = document.createElement("button");
             b.type = "button";
             b.className = "opt";
             b.style.animationDelay = (0.03 * idx) + "s";
+            b.setAttribute("aria-pressed", "false");
             b.innerHTML = opt.title ?
                 "<b>" + esc(opt.title) + "</b><span>" + esc(opt.label) + "</span>" :
                 esc(opt.label);
-            b.addEventListener("click", function() { if (!state.busy) opt.run(); });
+            b.addEventListener("click", function() { select(idx); });
             elOptions.appendChild(b);
         });
         elOptions.scrollTop = 0;
+        updateInput();
     }
+
+    function select(idx) {
+        if (state.busy) return;
+        state.selected = idx;
+        Array.prototype.forEach.call(elOptions.children, function(b, i) {
+            b.setAttribute("aria-pressed", i === idx ? "true" : "false");
+        });
+        updateInput();
+        elSend.focus();
+    }
+
+    function optionText(opt) {
+        return opt.title ? opt.title + " " + opt.label : opt.label;
+    }
+
+    function updateInput() {
+        var opt = state.current[state.selected];
+        if (opt) {
+            elInput.textContent = optionText(opt);
+        } else {
+            elInput.textContent = state.current.length ? PLACEHOLDER_PICK : PLACEHOLDER_IDLE;
+        }
+        elSend.disabled = state.busy || !opt;
+    }
+
+    function send() {
+        var opt = state.current[state.selected];
+        if (state.busy || !opt) return;
+        opt.run();
+    }
+
+    elSend.addEventListener("click", send);
+    document.addEventListener("keydown", function(e) {
+        var el = document.activeElement;
+        /* Enter на кнопці варіанта лише обирає його; на стрілці спрацьовує її власний клік. */
+        if (e.key === "Enter" && state.selected >= 0 && el !== elSend && !(el && el.classList.contains("opt"))) {
+            e.preventDefault();
+            send();
+        }
+    });
 
     function lockOptions(locked) {
         Array.prototype.forEach.call(elOptions.children, function(b) { b.disabled = locked; });
+        updateInput();
     }
 
     function say(text) {
@@ -114,8 +166,15 @@
                     var r = ranksOf(o);
                     Object.keys(DIRECTIONS).forEach(function(k) { state.scores[k] += r[k] || 0; });
                     state.q++;
-                    if (state.q < QUESTIONS.length) botSay([questionHtml(state.q)], showQuestionOptions);
-                    else showResults();
+                    var parts = o.comment ? ["<p>" + esc(o.comment) + "</p>"] : [];
+                    if (state.q < QUESTIONS.length) {
+                        parts.push(questionHtml(state.q));
+                        botSay(parts, showQuestionOptions);
+                    } else if (parts.length) {
+                        botSay(parts, showResults);
+                    } else {
+                        showResults();
+                    }
                 }
             };
         }));
