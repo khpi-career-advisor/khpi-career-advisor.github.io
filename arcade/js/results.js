@@ -2,14 +2,6 @@
 function showResults() {
     const categoryResults = resultsCalculator.calculatePercentages(state.swipes);
 
-    jsonBucket.addNew({
-        gender: state.gender,
-        age: state.age,
-        swipes: state.swipes.slice(),
-        suggestion: categoryResults,
-        source: RECORD_SOURCE
-    });
-
     const results = categoryResults
         .map(cat => {
             const d = educationDirections.find(x => x.id === cat.id);

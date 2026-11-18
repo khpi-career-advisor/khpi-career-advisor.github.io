@@ -18,12 +18,6 @@ class ResultsController {
 
         appState.swipeResults.suggestion = categoryResults;
 
-        // BEGIN: Display results and save to JSON bucket
-        console.log('Final results:', JSON.stringify(appState.swipeResults, null, 2));
-
-        jsonBucket.addNew(appState.swipeResults);
-        // END: Display results and save to JSON bucket
-
         // Map results to education directions using IDs
         const results = categoryResults
             .map(cat => {

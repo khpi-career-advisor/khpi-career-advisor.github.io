@@ -2,9 +2,9 @@
 const state = {
     gender: null,
     age: null,
-    swipes: [],    // значення відповідей у порядку питань
-    idx: 0,        // індекс поточного питання
-    lock: false    // блокування на час анімації переходу
+    swipes: [], // значення відповідей у порядку питань
+    idx: 0, // індекс поточного питання
+    lock: false // блокування на час анімації переходу
 };
 
 function resetState() {
@@ -14,6 +14,3 @@ function resetState() {
     state.idx = 0;
     state.lock = false;
 }
-
-// Сховище результатів — та сама колекція, яку показує admin.html
-const jsonBucket = new LocalStorageCollection('khpi-career-advisor');
