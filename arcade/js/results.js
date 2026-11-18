@@ -9,6 +9,12 @@ function showResults() {
         })
         .sort((a, b) => b.percentage - a.percentage);
 
+    // track in Google Analytics
+    gtag('event', 'arcade_complete', {
+        name: JSON.stringify(results[0].name),
+        percentage: JSON.stringify(results[0].percentage)
+    });
+
     const list = $('resultsList');
     list.innerHTML = '';
     results.forEach(r => {

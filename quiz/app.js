@@ -165,6 +165,12 @@
             list.appendChild(li);
         });
 
+        // track in Google Analytics
+        gtag('event', 'quiz_complete', {
+            name: JSON.stringify(ranked[0].name),
+            percent: JSON.stringify(ranked[0].percent)
+        });
+
         show('result');
     }
 

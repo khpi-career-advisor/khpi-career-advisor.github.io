@@ -30,6 +30,12 @@ class ResultsController {
             })
             .sort((a, b) => b.percentage - a.percentage);
 
+        // track in Google Analytics
+        gtag('event', 'swipe_complete', {
+            name: JSON.stringify(results[0].name),
+            percentage: JSON.stringify(results[0].percentage)
+        });
+
         // Clear and populate results list
         this.resultsList.innerHTML = '';
         results.forEach((result, index) => {

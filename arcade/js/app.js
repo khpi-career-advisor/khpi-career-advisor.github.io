@@ -1,5 +1,5 @@
 // Main Application: запуск, головний цикл, автоповернення на старт
-const IDLE_RESET_MS = 120000;   // без дій 2 хвилини — повернення на вступний екран (режим кіоску)
+const IDLE_RESET_MS = 120000; // без дій 2 хвилини — повернення на вступний екран (режим кіоску)
 
 function drawMascot() {
     const x = $('botCv').getContext('2d');
@@ -10,7 +10,8 @@ function drawMascot() {
 function frame(now) {
     pollPad(now);
     if (cur === 'quiz') drawScene(now, state.idx);
-    if (toastT && now > toastT) { $('toast').classList.remove('on'); toastT = 0; }
+    if (toastT && now > toastT) { $('toast').classList.remove('on');
+        toastT = 0; }
     if (cur && cur !== 'intro' && now - lastInput > IDLE_RESET_MS) {
         resetAll();
         lastInput = now;
@@ -25,5 +26,4 @@ document.addEventListener('DOMContentLoaded', () => {
     drawMascot();
     showScreen('intro');
     requestAnimationFrame(frame);
-    console.log('Polytech Quiz initialized');
 });

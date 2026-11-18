@@ -207,7 +207,15 @@
     }
 
     function showResults() {
-        var list = "<ol>" + percents().map(function(r) {
+        var results = percents();
+
+        // track in Google Analytics
+        gtag('event', 'bot_complete', {
+            name: JSON.stringify(esc(DIRECTIONS[results[0].key].name)),
+            pct: JSON.stringify(results[0].pct)
+        });
+
+        var list = "<ol>" + results.map(function(r) {
             var d = DIRECTIONS[r.key];
             return '<li><a href="' + esc(d.url) + '" target="_blank" rel="noopener noreferrer">' +
                 esc(d.name) + "</a>: " + r.pct + "%</li>";
