@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="uk">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ШІ-помічники для вступників | НТУ «ХПІ»</title>
+    <meta name="description" content="Профорієнтаційний чат-бот і тест «Так/Ні» НТУ «ХПІ»: визнач схильність до чотирьох освітніх напрямів за кілька хвилин. Усі обчислення виконуються в браузері.">
+    <meta name="theme-color" content="#800000">
+    <meta property="og:title" content="ШІ-помічники для вступників НТУ «ХПІ»">
+    <meta property="og:description" content="Чат-бот на 11 запитань і тест на 25 тверджень для вибору освітнього напряму.">
+    <meta property="og:image" content="img/poster.jpg">
+    <meta property="og:type" content="website">
+    <link rel="icon" href="img/logo.png">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div class="progress" aria-hidden="true"><span id="progressBar"></span></div>
+
+    <!-- ============ ШАПКА ============ -->
+    <header class="header" id="header">
+        <div class="container header__inner">
+            <a class="brand" href="https://vstup.kpi.kharkov.ua/" target="_blank" rel="noopener" aria-label="Сайт вступу НТУ «ХПІ»">
+                <img src="img/logo.png" alt="" width="44" height="44">
+                <span class="brand__text">
+        <b>НТУ «ХПІ»</b>
+        <small>Профорієнтація зі ШІ</small>
+      </span>
+            </a>
+            <nav class="nav" id="nav" aria-label="Основна навігація">
+                <a href="#problem">Виклик</a>
+                <a href="#solution">Сервіси</a>
+                <a href="#video">Відео</a>
+                <a href="#method">Методика</a>
+                <a href="#directions">Напрями</a>
+                <a href="#impact">Впровадження</a>
+                <a class="btn btn--sm btn--orange" href="#qr">Спробувати</a>
+            </nav>
+            <button class="burger" id="burger" aria-label="Відкрити меню" aria-expanded="false" aria-controls="nav">
+      <span></span><span></span><span></span>
+    </button>
+        </div>
+    </header>
+
+    <main>
+
+        <!-- ============ HERO ============ -->
+        <section class="hero" id="top">
+            <svg class="hero__building" viewBox="0 0 600 360" aria-hidden="true" preserveAspectRatio="xMidYMax meet">
+    <g fill="none" stroke="currentColor" stroke-width="6" stroke-linejoin="round">
+      <path d="M190 110 L300 50 L410 110"/>
+      <path d="M210 110 H390"/>
+      <rect x="60" y="130" width="480" height="210"/>
+      <path d="M40 340 H560"/>
+      <path d="M250 340 V300 H350 V340"/>
+      <circle cx="300" cy="85" r="10"/>
+    </g>
+    <g fill="currentColor">
+      <rect x="90" y="160" width="30" height="40" rx="15"/><rect x="140" y="160" width="30" height="40" rx="15"/>
+      <rect x="190" y="160" width="30" height="40" rx="15"/><rect x="260" y="150" width="30" height="50" rx="15"/>
+      <rect x="310" y="150" width="30" height="50" rx="15"/><rect x="380" y="160" width="30" height="40" rx="15"/>
+      <rect x="430" y="160" width="30" height="40" rx="15"/><rect x="480" y="160" width="30" height="40" rx="15"/>
+      <rect x="90" y="230" width="30" height="40" rx="15"/><rect x="140" y="230" width="30" height="40" rx="15"/>
+      <rect x="190" y="230" width="30" height="40" rx="15"/><rect x="260" y="225" width="30" height="45" rx="15"/>
+      <rect x="310" y="225" width="30" height="45" rx="15"/><rect x="380" y="230" width="30" height="40" rx="15"/>
+      <rect x="430" y="230" width="30" height="40" rx="15"/><rect x="480" y="230" width="30" height="40" rx="15"/>
+    </g>
+  </svg>
+
+            <div class="container hero__grid">
+                <div class="hero__copy">
+                    <p class="eyebrow eyebrow--sidecar">Обирай свій шлях!</p>
+                    <h1 class="hero__title">ШІ-помічники <span class="nowrap">для вступників</span></h1>
+                    <p class="hero__lead">
+                        Два безкоштовні вебсервіси НТУ «ХПІ» за кілька хвилин показують, до якого з чотирьох освітніх напрямів у тебе найбільша схильність, і ведуть одразу на сторінку вступу.
+                    </p>
+                    <div class="hero__cta">
+                        <a class="btn btn--sidecar" href="https://khpi-career-advisor.github.io/bot/" target="_blank" rel="noopener">
+                            <img src="img/icon-bot.png" alt="" width="28" height="28"> Поговорити з чат-ботом
+                        </a>
+                        <a class="btn btn--ghost" href="https://khpi-career-advisor.github.io/quiz/" target="_blank" rel="noopener">
+                            <img src="img/icon-quiz.png" alt="" width="28" height="28"> Пройти тест «Так/Ні»
+                        </a>
+                    </div>
+                    <ul class="hero__facts">
+                        <li><b data-count="11">0</b><span>запитань у чат-боті</span></li>
+                        <li><b data-count="25">0</b><span>тверджень у тесті</span></li>
+                        <li><b data-count="4">0</b><span>освітні напрями</span></li>
+                    </ul>
+                </div>
+
+                <div class="hero__visual" id="heroVisual">
+                    <div class="phone phone--back" data-depth="12">
+                        <img src="img/screen-quiz.png" alt="Екран тесту: запитання 2 з 25 з ілюстрацією і кнопками «Так» і «Ні»" width="433" height="941">
+                    </div>
+                    <div class="phone phone--front" data-depth="24">
+                        <img src="img/screen-bot.png" alt="Екран чат-бота: питання, коментарі бота і кнопки варіантів відповіді" width="433" height="941">
+                    </div>
+                    <img class="mascot" src="img/mascot.png" alt="Маскот ШІ-помічників — усміхнений робот" width="266" height="222" data-depth="40">
+                    <div class="bubble bubble--a" data-depth="30">Питання 3 з 11</div>
+                    <div class="bubble bubble--b" data-depth="18">Так / Ні</div>
+                </div>
+            </div>
+
+            <a class="hero__scroll" href="#problem" aria-label="Гортати далі"><span></span></a>
+        </section>
+
+        <!-- ============ БІГУЧИЙ РЯДОК ============ -->
+        <div class="ticker" aria-hidden="true">
+            <div class="ticker__track">
+                <span>11 запитань</span><i>✦</i><span>25 тверджень</span><i>✦</i><span>4 освітні напрями</span><i>✦</i>
+                <span>Експертні оцінки GPT-4o-mini</span><i>✦</i><span>0 cookie</span><i>✦</i><span>Без реєстрації</span><i>✦</i>
+                <span>Усе рахується в браузері</span><i>✦</i>
+                <span>11 запитань</span><i>✦</i><span>25 тверджень</span><i>✦</i><span>4 освітні напрями</span><i>✦</i>
+                <span>Експертні оцінки GPT-4o-mini</span><i>✦</i><span>0 cookie</span><i>✦</i><span>Без реєстрації</span><i>✦</i>
+                <span>Усе рахується в браузері</span><i>✦</i>
+            </div>
+        </div>
+
+        <!-- ============ ПРОБЛЕМА ============ -->
+        <section class="section section--cream" id="problem">
+            <div class="container">
+                <header class="section__head reveal">
+                    <p class="eyebrow">Виклик</p>
+                    <h2>Підлітки думають про професію, але рідко знають, яку обрати</h2>
+                    <p class="section__lead">Профорієнтація в школах має епізодичний характер і здебільшого обмежується старшими класами. Через це зростає ризик неусвідомленого вибору, втрати мотивації до навчання та неефективного використання людського потенціалу.</p>
+                </header>
+
+                <div class="stats">
+                    <article class="stat-card reveal">
+                        <div class="people" data-people="8" data-tone="maroon" aria-hidden="true"></div>
+                        <p class="stat-card__num"><b data-count="8">0</b> з 10 дітей</p>
+                        <p>уже задумувались над тим, якою професією хочуть займатися в майбутньому.</p>
+                    </article>
+                    <article class="stat-card reveal">
+                        <div class="people" data-people="3" data-tone="orange" aria-hidden="true"></div>
+                        <p class="stat-card__num">лише <b data-count="3">0</b> з 10</p>
+                        <p>чітко визначилися з цим питанням.</p>
+                    </article>
+                    <article class="stat-card stat-card--wide reveal">
+                        <p class="stat-card__num"><b data-count="30">0</b>%</p>
+                        <p>підлітків в Україні можуть назвати професію, яку очікують мати у 30 років. Це вдвічі менше за середній показник країн ОЕСР.</p>
+                        <div class="bars" role="img" aria-label="Частка підлітків, які назвали очікувану професію: Україна 30%, середнє ОЕСР 61%, Коста-Рика 81%, Фінляндія 48%">
+                            <div class="bar bar--ua"><span>Україна</span>
+                                <div><i style="--v:30"></i></div><em>30</em></div>
+                            <div class="bar"><span>Середнє ОЕСР</span>
+                                <div><i style="--v:61"></i></div><em>61</em></div>
+                            <div class="bar"><span>Найвище ОЕСР (Коста-Рика)</span>
+                                <div><i style="--v:81"></i></div><em>81</em></div>
+                            <div class="bar"><span>Найнижче ОЕСР (Фінляндія)</span>
+                                <div><i style="--v:48"></i></div><em>48</em></div>
+                        </div>
+                    </article>
+                </div>
+                <p class="source reveal">Джерело: Фундація Олени Зеленської (2025). <a href="https://www.president.gov.ua/storage/j-files-storage/01/38/17/3c89c3cb48ab9d22ecb71335feeeca8b_1747928687.pdf" target="_blank" rel="noopener">Індекс майбутнього: професійні очікування та розвиток підлітків в Україні</a>.</p>
+            </div>
+        </section>
+
+        <!-- ============ РІШЕННЯ ============ -->
+        <section class="section" id="solution">
+            <div class="container">
+                <header class="section__head reveal">
+                    <p class="eyebrow">Відповідь НТУ «ХПІ»</p>
+                    <h2>Два сервіси з різною логікою взаємодії</h2>
+                    <p class="section__lead">Фахівці університету з профорієнтації, психології та інформаційних технологій створили чат-бот і тест, у яких внесок кожної відповіді в освітні напрями визначено за експертними оцінками великої мовної моделі.</p>
+                </header>
+
+                <div class="products">
+                    <!-- Чат-бот -->
+                    <article class="product product--bot reveal">
+                        <div class="product__top">
+                            <img src="img/icon-bot.png" alt="" width="64" height="64">
+                            <div>
+                                <p class="tag">Діалог</p>
+                                <h3>Профорієнтаційний чат-бот</h3>
+                            </div>
+                        </div>
+                        <p>Ти відповідаєш на 11 запитань, обираючи один із чотирьох готових варіантів, а бот коментує кожну відповідь. Коментарі допомагають зрозуміти, які саме інтереси стоять за твоїм вибором.</p>
+
+                        <div class="chat-demo" id="chatDemo" aria-label="Приклад діалогу з чат-ботом">
+                            <div class="chat-demo__msg chat-demo__msg--meta">Питання 1 з 11</div>
+                            <div class="chat-demo__msg chat-demo__msg--q">Які завдання ви більше любите вирішувати?</div>
+                            <div class="chat-demo__msg chat-demo__msg--user">Програмування та робота з технологіями</div>
+                            <div class="chat-demo__msg chat-demo__msg--bot">Інтерес до програмування дає хорошу основу: цифрові технології сьогодні використовуються майже в кожній галузі.</div>
+                            <div class="chat-demo__typing"><span></span><span></span><span></span></div>
+                        </div>
+
+                        <ul class="checks">
+                            <li>Вибір можна змінити до надсилання відповіді</li>
+                            <li>Лічильник «Питання N з 11»</li>
+                            <li>Результат у відсотках за всіма чотирма напрямами</li>
+                        </ul>
+                        <a class="btn btn--maroon" href="https://khpi-career-advisor.github.io/bot/" target="_blank" rel="noopener">Відкрити чат-бот →</a>
+                    </article>
+
+                    <!-- Тест -->
+                    <article class="product product--quiz reveal">
+                        <div class="product__top">
+                            <img src="img/icon-quiz.png" alt="" width="64" height="64">
+                            <div>
+                                <p class="tag tag--orange">Візуальне сприйняття</p>
+                                <h3>Тест «Так/Ні»</h3>
+                            </div>
+                        </div>
+                        <p>25 тверджень у випадковому порядку, кожне з ілюстрацією, створеною ШІ. Швидка відповідь «Так» чи «Ні» фіксує емоційну реакцію на професійне середовище.</p>
+
+                        <div class="quiz-demo">
+                            <img src="img/screen-quiz.png" alt="Тест: твердження про безпеку корпоративної мережі з ілюстрацією" loading="lazy" width="433" height="941">
+                        </div>
+
+                        <ul class="checks">
+                            <li>Смуга прогресу та ілюстрація до кожного твердження</li>
+                            <li>Два рекомендовані напрями з поясненням через твої інтереси</li>
+                            <li>Відсотки за всіма чотирма напрямами</li>
+                        </ul>
+                        <a class="btn btn--maroon" href="https://khpi-career-advisor.github.io/quiz/" target="_blank" rel="noopener">Пройти тест →</a>
+                    </article>
+                </div>
+
+                <div class="note reveal">
+                    <img src="img/campus.jpg" alt="Головний корпус НТУ «ХПІ» в оточенні зелені" loading="lazy">
+                    <div>
+                        <h3>Відправна точка, доступна звідусіль</h3>
+                        <p>Аналіз українського й зарубіжного досвіду показав, що подібні інструменти переважно орієнтовані на студентів, а не на абітурієнтів. Сервіси НТУ «ХПІ» не замінюють консультацію з приймальною комісією, а доповнюють її. Вони особливо
+                            корисні вступникам із ТОТ і тим, хто не може відвідати університет особисто.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ ВІДЕО ============ -->
+        <section class="section section--walnut" id="video">
+            <div class="container">
+                <header class="section__head section__head--light reveal">
+                    <p class="eyebrow eyebrow--sidecar">Відеопрезентація</p>
+                    <h2>Як працюють ШІ-помічники для підлітків</h2>
+                </header>
+
+                <div class="video reveal">
+                    <div class="video__frame" id="videoFrame" data-id="W-W1od7JtXM">
+                        <img src="img/still-2.jpg" alt="Кадр з відео: робот-маскот поруч з вікном результату тесту" loading="lazy">
+                        <button class="video__play" id="videoPlay" aria-label="Відтворити відео">
+          <svg viewBox="0 0 68 48" aria-hidden="true"><path d="M66.5 7.7a8.5 8.5 0 0 0-6-6C55.2.3 34 .3 34 .3s-21.2 0-26.5 1.4a8.5 8.5 0 0 0-6 6C.1 13 .1 24 .1 24s0 11 1.4 16.3a8.5 8.5 0 0 0 6 6c5.3 1.4 26.5 1.4 26.5 1.4s21.2 0 26.5-1.4a8.5 8.5 0 0 0 6-6C67.9 35 67.9 24 67.9 24s0-11-1.4-16.3z" fill="#F20530"/><path d="M27 34V14l18 10z" fill="#fff"/></svg>
+        </button>
+                        <span class="video__hint">Відео завантажиться з YouTube після натискання</span>
+                    </div>
+                    <aside class="video__side">
+                        <figure>
+                            <img src="img/press.jpg" alt="Андрій Копп, Ніна Підбуцька і Сергій Петров під час презентації у пресцентрі «Накипіло»" loading="lazy">
+                            <figcaption>Презентація розробок у харківському пресцентрі «Накипіло»</figcaption>
+                        </figure>
+                        <p>Розробки публічно представили фахівці НТУ «ХПІ»: розповіли про функціональні особливості сервісів, мету їх створення та роль у профорієнтаційній підтримці молоді.</p>
+                        <a class="link-arrow" href="https://youtu.be/W-W1od7JtXM" target="_blank" rel="noopener">Дивитися на YouTube</a>
+                    </aside>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ МЕТОДИКА ============ -->
+        <section class="section" id="method">
+            <div class="container">
+                <header class="section__head reveal">
+                    <p class="eyebrow">Методика</p>
+                    <h2>Психологія задає зміст, алгоритм дає відтворюваний результат</h2>
+                </header>
+
+                <div class="pillars">
+                    <article class="pillar reveal">
+                        <img src="img/icon-psy.png" alt="" width="72" height="72">
+                        <h3>Психологічна основа</h3>
+                        <p>Тест вимірює професійні інтереси, а не здібності. Твердження охоплюють п'ять сфер, на кожну припадає від 4 до 6 тверджень трьох видів: бажана справа, захоплення, риса характеру.</p>
+                        <div class="spheres">
+                            <span>Техніка</span><span>Природа</span><span>Люди</span><span>Знаки й числа</span><span>Творчість</span>
+                        </div>
+                        <p class="muted">Відповідь «Ні» означає лише, що інтерес не виявлено. Вона не свідчить, що напрям не підходить.</p>
+                    </article>
+                    <article class="pillar reveal">
+                        <img src="img/icon-tech.png" alt="" width="72" height="72">
+                        <h3>Методи профорієнтації</h3>
+                        <p><b>Самооцінка та рефлексія.</b> Кожна відповідь у чат-боті супроводжується коментарем, який спонукає подумати про власні інтереси.</p>
+                        <p><b>Порівняльно-аналітичний метод.</b> Результати зіставляються з освітніми напрямами за принципом інформаційної адекватності: «Я-образ» учня порівнюється з вимогами професії.</p>
+                    </article>
+                </div>
+
+                <h3 class="subhead reveal">Шлях від відповіді до рекомендації</h3>
+                <ol class="pipeline">
+                    <li class="reveal">
+                        <span class="pipeline__n">01</span>
+                        <h4>Експертні оцінки ШІ</h4>
+                        <p>На етапі розроблення GPT-4o-mini ранжує кожен варіант відповіді за відповідністю чотирьом напрямам: ранги від 1 до 4.</p>
+                    </li>
+                    <li class="reveal">
+                        <span class="pipeline__n">02</span>
+                        <h4>Агрегування</h4>
+                        <p>Фінальний ранг дорівнює середньому геометричному оцінок K незалежних запитів. Некоректні відповіді моделі запитуються повторно.</p>
+                    </li>
+                    <li class="reveal">
+                        <span class="pipeline__n">03</span>
+                        <h4>Підрахунок у браузері</h4>
+                        <p>Ранги обраних відповідей підсумовуються, схильність до кожного напряму нормується за власною шкалою 0–100 %. Однакові відповіді завжди дають однаковий результат.</p>
+                    </li>
+                    <li class="reveal">
+                        <span class="pipeline__n">04</span>
+                        <h4>Рекомендація</h4>
+                        <p>Напрями впорядковуються за схильністю й подаються з посиланнями на сторінки вступу. Тест додатково пояснює вибір через інтереси з відповідей «Так».</p>
+                    </li>
+                </ol>
+
+                <div class="formula-card reveal">
+                    <div>
+                        <h4>Схильність до напряму</h4>
+                        <div class="formula formula--big">
+                            P<sub>d</sub> = <span class="frac"><span>S<sub>d</sub> − S<sub>d</sub><sup>min</sup></span><span>S<sub>d</sub><sup>max</sup> − S<sub>d</sub><sup>min</sup></span></span> · 100%
+                        </div>
+                    </div>
+                    <p>S<sub>d</sub> — сума рангів обраних відповідей для напряму d, межі шкали рахуються з усіх запитань. Кожен напрям має власну шкалу, тому сума відсотків не дорівнює 100 %.</p>
+                </div>
+
+                <div class="privacy reveal">
+                    <div class="privacy__item"><b>0</b><span>серверів і баз даних</span></div>
+                    <div class="privacy__item"><b>0</b><span>cookie, localStorage та аналітики</span></div>
+                    <div class="privacy__item"><b>HTML · CSS · JS</b><span>без бібліотек і збирання, хостинг GitHub Pages</span></div>
+                    <div class="privacy__item"><b>1 сайт</b><span>для смартфонів, планшетів і комп'ютерів завдяки адаптивній верстці</span></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ НАПРЯМИ ============ -->
+        <section class="section section--cream" id="directions">
+            <div class="container">
+                <header class="section__head reveal">
+                    <p class="eyebrow">Куди ведуть рекомендації</p>
+                    <h2>Чотири освітні напрями НТУ «ХПІ»</h2>
+                    <p class="section__lead">Результат кожного сервісу містить посилання на сторінки вступу. Вони виконують роль другого етапу: там можна уточнити спеціальності в межах напряму.</p>
+                </header>
+                <div class="dirs">
+                    <a class="dir reveal" href="https://vstup.kpi.kharkov.ua/admission/engineering/" target="_blank" rel="noopener" style="--c:#800000">
+                        <span class="dir__key">A</span>
+                        <h3>Інженерно-технічна освіта</h3>
+                        <p>Техніка, механізми, енергетика, конструювання.</p>
+                        <span class="dir__go">Сторінка вступу →</span>
+                    </a>
+                    <a class="dir reveal" href="https://vstup.kpi.kharkov.ua/admission/it-osvita/" target="_blank" rel="noopener" style="--c:#F27405">
+                        <span class="dir__key">C</span>
+                        <h3>Вища ІТ-освіта</h3>
+                        <p>Програмування, алгоритми, дані, кібербезпека.</p>
+                        <span class="dir__go">Сторінка вступу →</span>
+                    </a>
+                    <a class="dir reveal" href="https://vstup.kpi.kharkov.ua/admission/biznes-osvita/" target="_blank" rel="noopener" style="--c:#942921">
+                        <span class="dir__key">B</span>
+                        <h3>Бізнес-освіта</h3>
+                        <p>Аналітика, управлінські рішення, економіка, підприємництво.</p>
+                        <span class="dir__go">Сторінка вступу →</span>
+                    </a>
+                    <a class="dir reveal" href="https://vstup.kpi.kharkov.ua/admission/humanitarna-osvita/" target="_blank" rel="noopener" style="--c:#732C02">
+                        <span class="dir__key">D</span>
+                        <h3>Соціально-гуманітарна освіта</h3>
+                        <p>Робота з людьми, суспільні процеси, комунікації, мови.</p>
+                        <span class="dir__go">Сторінка вступу →</span>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ ДЛЯ ПАРТНЕРІВ ============ -->
+        <section class="section" id="partners">
+            <div class="container">
+                <header class="section__head reveal">
+                    <p class="eyebrow">Для шкіл, університетів і партнерів</p>
+                    <h2>Потенціал і сфери застосування</h2>
+                </header>
+
+                <div class="tabs reveal" role="tablist" aria-label="Сервіси">
+                    <button class="tabs__btn is-active" role="tab" aria-selected="true" aria-controls="panel-bot" id="tab-bot">Чат-бот</button>
+                    <button class="tabs__btn" role="tab" aria-selected="false" aria-controls="panel-quiz" id="tab-quiz">Тест «Так/Ні»</button>
+                    <span class="tabs__ink" aria-hidden="true"></span>
+                </div>
+
+                <div class="panel is-active" id="panel-bot" role="tabpanel" aria-labelledby="tab-bot">
+                    <div class="panel__grid">
+                        <div class="info">
+                            <h4>Потенціал розробки</h4>
+                            <p>Масштабоване автоматизоване рішення для зростаючого попиту на освітній консалтинг і профорієнтацію. Зменшує навантаження на консультантів і витрати приймальних комісій, інтегрується в освітні платформи та державні служби зайнятості.
+                                Модель монетизації: підписка, ліцензування для шкіл і університетів, B2B-послуги для освітніх платформ.</p>
+                        </div>
+                        <div class="info">
+                            <h4>Сфера застосування</h4>
+                            <ul class="checks">
+                                <li>середні школи й центри кар'єри</li>
+                                <li>університети для ширшого охоплення вступників</li>
+                                <li>онлайн-платформи освіти як інструмент адаптації</li>
+                                <li>державні програми працевлаштування молоді</li>
+                            </ul>
+                        </div>
+                        <div class="info">
+                            <h4>Кінцевий продукт</h4>
+                            <ul class="checks">
+                                <li>статичний вебзастосунок у форматі чату</li>
+                                <li>кнопки готових варіантів відповіді</li>
+                                <li>жодного збору персональних даних</li>
+                                <li>ранги варіантів від GPT-4o-mini</li>
+                            </ul>
+                        </div>
+                        <div class="info">
+                            <h4>Особливості</h4>
+                            <ul class="checks">
+                                <li>11 запитань для профілювання</li>
+                                <li>коментар бота до кожної відповіді</li>
+                                <li>вибір можна змінити до надсилання</li>
+                                <li>основа для багатомовної версії</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <figure class="uml">
+                        <button class="zoom" data-full="img/uml-bot.png" aria-label="Збільшити діаграму">
+          <img src="img/uml-bot.png" alt="Діаграма варіантів використання чат-бота: почати тестування, відповісти на питання, переглянути коментар, схильність і перейти на сторінку вступу" loading="lazy">
+        </button>
+                        <figcaption>Функціональні можливості чат-бота (діаграма варіантів використання)</figcaption>
+                    </figure>
+                </div>
+
+                <div class="panel" id="panel-quiz" role="tabpanel" aria-labelledby="tab-quiz" hidden>
+                    <div class="panel__grid">
+                        <div class="info">
+                            <h4>Потенціал розробки</h4>
+                            <p>Гейміфікований формат підвищує залученість учнів. Нульова вартість інфраструктури, робота без сервера й відсутність збору даних роблять тест зручним для державно-приватних партнерств, ліцензування та брендованого розгортання
+                                в школах і на ярмарках вакансій.</p>
+                        </div>
+                        <div class="info">
+                            <h4>Сфера застосування</h4>
+                            <ul class="checks">
+                                <li>тижні профорієнтації в школах</li>
+                                <li>STEM-просвіта та освітні ярмарки</li>
+                                <li>онлайн-платформи навчання для профілювання</li>
+                                <li>муніципальні й регіональні департаменти освіти</li>
+                            </ul>
+                        </div>
+                        <div class="info">
+                            <h4>Кінцевий продукт</h4>
+                            <ul class="checks">
+                                <li>ілюстрація до кожного твердження та смуга прогресу</li>
+                                <li>візуальний контент, створений ШІ</li>
+                                <li>ранги тверджень від GPT-4o-mini</li>
+                                <li>відповіді обробляються лише в браузері</li>
+                            </ul>
+                        </div>
+                        <div class="info">
+                            <h4>Особливості</h4>
+                            <ul class="checks">
+                                <li>25 тверджень у випадковому порядку</li>
+                                <li>тематичні ілюстрації до кар'єрних кластерів</li>
+                                <li>текстове пояснення результату</li>
+                                <li>два рекомендовані напрями та відсотки за чотирма</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <figure class="uml">
+                        <button class="zoom" data-full="img/uml-quiz.png" aria-label="Збільшити діаграму">
+          <img src="img/uml-quiz.png" alt="Діаграма варіантів використання тесту: почати тест, відповісти на 25 тверджень, переглянути результат і перейти на сторінку вступу" loading="lazy">
+        </button>
+                        <figcaption>Функціональні можливості тесту (діаграма варіантів використання)</figcaption>
+                    </figure>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ ВПРОВАДЖЕННЯ ============ -->
+        <section class="section section--maroon" id="impact">
+            <div class="container">
+                <header class="section__head section__head--light reveal">
+                    <p class="eyebrow eyebrow--sidecar">Перші результати впровадження</p>
+                    <h2>Школярі вже користуються першою версією</h2>
+                    <p class="section__lead">Протягом 2025–2026 років сервіси представлено учням шкіл під час профорієнтаційних зустрічей і освітніх заходів.</p>
+                </header>
+                <div class="gallery">
+                    <button class="zoom g g--wide reveal" data-full="img/gallery/school-1.jpg"><img src="img/gallery/school-1.jpg" alt="Презентація сервісів у шкільному класі" loading="lazy"></button>
+                    <button class="zoom g g--tall reveal" data-full="img/gallery/school-6.jpg"><img src="img/gallery/school-6.jpg" alt="Учень проходить тест на смартфоні" loading="lazy"></button>
+                    <button class="zoom g reveal" data-full="img/gallery/school-2.jpg"><img src="img/gallery/school-2.jpg" alt="Учні в аудиторії проходять тестування на телефонах" loading="lazy"></button>
+                    <button class="zoom g g--tall reveal" data-full="img/gallery/school-7.jpg"><img src="img/gallery/school-7.jpg" alt="Смартфон із відкритим профорієнтаційним сервісом" loading="lazy"></button>
+                    <button class="zoom g reveal" data-full="img/gallery/school-3.jpg"><img src="img/gallery/school-3.jpg" alt="Школярки знайомляться з сервісами разом із представником університету" loading="lazy"></button>
+                    <button class="zoom g reveal" data-full="img/gallery/school-4.jpg"><img src="img/gallery/school-4.jpg" alt="Буклети НТУ «ХПІ» з QR-кодами на столі" loading="lazy"></button>
+                    <button class="zoom g reveal" data-full="img/poster.jpg"><img src="img/poster.jpg" alt="Постер «ШІ-помічники для вступників» з QR-кодами сервісів" loading="lazy"></button>
+                    <button class="zoom g g--wide reveal" data-full="img/gallery/school-5.jpg"><img src="img/gallery/school-5.jpg" alt="Стенд університету з буклетами та VR-гарнітурами" loading="lazy"></button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ QR ============ -->
+        <section class="section section--sidecar" id="qr">
+            <div class="container">
+                <header class="section__head reveal">
+                    <p class="eyebrow">Переходь за посиланням або скануй QR-код</p>
+                    <h2>Обирай свій шлях з НТУ «ХПІ»</h2>
+                </header>
+                <div class="qrs">
+                    <article class="qr reveal">
+                        <div class="qr__code"><img src="img/qr-bot.png" alt="QR-код профорієнтаційного чат-бота" width="1000" height="1000" loading="lazy"></div>
+                        <div class="qr__body">
+                            <img src="img/icon-bot.png" alt="" width="48" height="48">
+                            <h3>Чат-бот</h3>
+                            <p>11 запитань, коментар до кожної відповіді, відсотки за чотирма напрямами.</p>
+                            <span class="qr__url">khpi-career-advisor.github.io/bot</span>
+                            <a class="btn btn--maroon" href="https://khpi-career-advisor.github.io/bot/" target="_blank" rel="noopener">Відкрити чат-бот →</a>
+                        </div>
+                    </article>
+                    <article class="qr reveal">
+                        <div class="qr__code"><img src="img/qr-quiz.png" alt="QR-код профорієнтаційного тесту «Так/Ні»" width="1000" height="1000" loading="lazy"></div>
+                        <div class="qr__body">
+                            <img src="img/icon-quiz.png" alt="" width="48" height="48">
+                            <h3>Тест «Так/Ні»</h3>
+                            <p>25 тверджень з ілюстраціями, два рекомендовані напрями з поясненням.</p>
+                            <span class="qr__url">khpi-career-advisor.github.io/quiz</span>
+                            <a class="btn btn--maroon" href="https://khpi-career-advisor.github.io/quiz/" target="_blank" rel="noopener">Пройти тест →</a>
+                        </div>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ КОМАНДА ============ -->
+        <section class="section section--cream" id="team">
+            <div class="container">
+                <header class="section__head reveal">
+                    <p class="eyebrow">Команда</p>
+                    <h2>Міждисциплінарна розробка на перетині психології та інтелектуальних технологій</h2>
+                </header>
+                <div class="team">
+                    <article class="person reveal">
+                        <span class="person__ava" data-initials="НП"><img src="img/team/pidbutska.jpg" alt="Ніна Підбуцька" width="600" height="600" loading="lazy"></span>
+                        <h3>Ніна Підбуцька</h3>
+                        <p>Завідувачка кафедри педагогіки та психології управління соціальними системами</p>
+                    </article>
+                    <article class="person reveal">
+                        <span class="person__ava" data-initials="АК"><img src="img/team/kopp.jpg" alt="Андрій Копп" width="600" height="600" loading="lazy"></span>
+                        <h3>Андрій Копп</h3>
+                        <p>Завідувач кафедри програмної інженерії та інтелектуальних технологій управління</p>
+                    </article>
+                    <article class="person reveal">
+                        <span class="person__ava" data-initials="СП"><img src="img/team/petrov.jpg" alt="Сергій Петров" width="600" height="600" loading="lazy"></span>
+                        <h3>Сергій Петров</h3>
+                        <p>Відповідальний секретар Центральної приймальної комісії (2025)</p>
+                    </article>
+                </div>
+
+                <div class="team team--students">
+                    <article class="person person--sm reveal">
+                        <span class="person__ava" data-initials="КХ"><img src="img/team/khoreshko.jpg" alt="Ксенія Хорєшко" width="600" height="600" loading="lazy"></span>
+                        <h3>Ксенія Хорєшко</h3>
+                        <p>Студентка спеціальності «Інженерія програмного забезпечення»</p>
+                    </article>
+                    <article class="person person--sm reveal">
+                        <span class="person__ava" data-initials="ЄС"><img src="img/team/savinkov.jpg" alt="Євген Савінков" width="600" height="600" loading="lazy"></span>
+                        <h3>Євген Савінков</h3>
+                        <p>Студент спеціальності «Інженерія програмного забезпечення»</p>
+                    </article>
+                    <article class="person person--sm reveal">
+                        <span class="person__ava" data-initials="ДК"><img src="img/team/karpenko.jpg" alt="Дмитро Карпенко" width="600" height="600" loading="lazy"></span>
+                        <h3>Дмитро Карпенко</h3>
+                        <p>Студент спеціальності «Психологія»</p>
+                    </article>
+                    <article class="person person--sm reveal">
+                        <span class="person__ava" data-initials="СВ"><img src="img/team/vladimirova.jpg" alt="Світлана Владімірова" width="600" height="600" loading="lazy"></span>
+                        <h3>Світлана Владімірова</h3>
+                        <p>Студентка спеціальності «Психологія»</p>
+                    </article>
+                </div>
+
+                <div class="caveat reveal">
+                    <b>Важливо.</b> Результат має рекомендаційний характер: інструменти не стандартизовано, а відповіді ґрунтуються на самозвіті. Остаточне рішення варто ухвалювати разом із приймальною комісією.
+                </div>
+
+                <div class="press reveal">
+                    <h4>Публікації</h4>
+                    <ul>
+                        <li><a href="https://nakypilo.ua/rozbory/chy-zdatnyi-chatbot-dopomohty-obraty-profesiiu/" target="_blank" rel="noopener">Накипіло: Чи здатний чатбот допомогти з вибором професії?</a></li>
+                        <li><a href="https://www.kpi.kharkov.ua/ukr/2025/04/29/fahivtsi-harkivskogo-politehu-stvoryly-innovatsijnyj-chatbot-dlya-proforiyentatsiyi-abituriyentiv/" target="_blank" rel="noopener">НТУ «ХПІ»: Фахівці Харківського Політеху створили інноваційний чатбот для профорієнтації абітурієнтів</a></li>
+                        <li><a href="https://www.president.gov.ua/storage/j-files-storage/01/38/17/3c89c3cb48ab9d22ecb71335feeeca8b_1747928687.pdf" target="_blank" rel="noopener">Фундація Олени Зеленської: Індекс майбутнього (2025)</a></li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ============ ПІДВАЛ ============ -->
+    <footer class="footer">
+        <div class="container footer__inner">
+            <div class="footer__brand">
+                <img src="img/logo.png" alt="Логотип НТУ «ХПІ»" width="56" height="56">
+                <p>Національний технічний університет<br>«Харківський політехнічний інститут»</p>
+            </div>
+            <nav class="footer__links" aria-label="Корисні посилання">
+                <a href="https://khpi-career-advisor.github.io/bot/" target="_blank" rel="noopener">Чат-бот</a>
+                <a href="https://khpi-career-advisor.github.io/quiz/" target="_blank" rel="noopener">Тест «Так/Ні»</a>
+                <a href="https://vstup.kpi.kharkov.ua/" target="_blank" rel="noopener">Вступ до НТУ «ХПІ»</a>
+                <a href="https://www.kpi.kharkov.ua/" target="_blank" rel="noopener">Сайт університету</a>
+            </nav>
+            <p class="footer__copy">© <span id="year">2026</span> НТУ «ХПІ». Сайт не використовує cookie та аналітику.</p>
+        </div>
+    </footer>
+
+    <a class="to-top" href="#top" id="toTop" aria-label="Нагору">↑</a>
+
+    <!-- Лайтбокс -->
+    <div class="lightbox" id="lightbox" hidden>
+        <button class="lightbox__close" id="lbClose" aria-label="Закрити">×</button>
+        <img id="lbImg" alt="">
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
